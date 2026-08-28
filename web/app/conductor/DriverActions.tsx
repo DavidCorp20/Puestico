@@ -37,17 +37,26 @@ export default function DriverActions({
           onClick={() => act('accept')}
           disabled={Boolean(busy)}
         >
-          {busy === 'accept' ? 'Aceptando…' : 'Aceptar'}
+          {busy === 'accept' ? (
+            <><span className="spinner" /> Aceptando…</>
+          ) : (
+            'Aceptar el pasajero'
+          )}
         </button>
         <button
           className="btn btn-ghost"
           onClick={() => act('reject')}
           disabled={Boolean(busy)}
         >
-          {busy === 'reject' ? 'Rechazando…' : 'Rechazar'}
+          {busy === 'reject' ? 'Rechazando…' : 'No puedo llevarlo'}
         </button>
       </div>
-      {error && <p className="error-text">{error}</p>}
+      {error && (
+        <div className="alert alert-warn">
+          <strong>No se pudo completar</strong>
+          {error}
+        </div>
+      )}
     </>
   );
 }

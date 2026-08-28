@@ -1,7 +1,8 @@
-import { findTrip, tripStatus } from '../../../lib/store';
+import { findTrip, tripStatus, ratingFor } from '../../../lib/store';
 import RouteMap from '../../RouteMap';
 import PanicButton from './PanicButton';
 import Avatar from '../../Avatar';
+import Stars from '../../Stars';
 
 export default async function Seguimiento({
   params,
@@ -15,9 +16,11 @@ export default async function Seguimiento({
     return (
       <div className="empty">
         <span className="empty-icon">🤔</span>
-        No encontramos ese viaje.
-        <br />
-        <a className="back-link" href="/mis-viajes">← Volver</a>
+        <strong>No encontramos ese viaje</strong>
+        Puede que el conductor lo haya dado de baja.
+        <a className="btn" href="/mis-viajes" style={{ marginTop: 14 }}>
+          Volver a mis viajes
+        </a>
       </div>
     );
   }
@@ -33,7 +36,7 @@ export default async function Seguimiento({
         {trip.origin} → {trip.destination} · salió {trip.departure_time}
       </p>
 
-      <div className="card" style={{ padding: 12 }}>
+      <div className="card map-card">
         <RouteMap
           origin={trip.origin}
           destination={trip.destination}
@@ -42,10 +45,13 @@ export default async function Seguimiento({
       </div>
 
       {status !== 'active' && (
-        <div className="note">
+        <div className={`alert ${status === 'completed' ? 'alert-ok' : 'alert-warn'}`}>
+          <strong>
+            {status === 'completed' ? 'El viaje terminó' : 'El viaje no arrancó todavía'}
+          </strong>
           {status === 'completed'
-            ? 'Este viaje ya finalizó.'
-            : 'El conductor todavía no inició el viaje.'}
+            ? 'Puedes calificar al conductor desde Mis viajes.'
+            : 'El conductor todavía no inició el recorrido. El mapa se mueve solo cuando arranca.'}
         </div>
       )}
 
@@ -58,8 +64,12 @@ export default async function Seguimiento({
               {trip.driver.name}
             </div>
             <div className="driver-meta">
-              ⭐ {trip.driver.rating.toFixed(1)} · {trip.vehicle.model} ·{' '}
-              <strong>{trip.vehicle.plate}</strong>
+              <Stars
+                value={ratingFor(trip.driver.name, trip.driver.rating).value}
+                showValue
+              />
+              <span className="sep">·</span>
+              {trip.vehicle.model} · <strong>{trip.vehicle.plate}</strong>
             </div>
           </div>
         </div>

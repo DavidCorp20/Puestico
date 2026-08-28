@@ -16,7 +16,7 @@ export default async function Publicar({
       </a>
       <h1>Publicar un viaje</h1>
       <p className="subtitle">
-        Contá cuándo salís y cuántos puestos tenés libres.
+        Di cuándo sales y cuántos puestos tienes libres.
       </p>
 
       <PublishForm driverId={driverId} />

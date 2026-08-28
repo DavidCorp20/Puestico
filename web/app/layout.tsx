@@ -3,9 +3,9 @@ import './globals.css';
 import Logo from './Logo';
 
 export const metadata: Metadata = {
-  title: 'Puestico — Viajá compartido en el área metropolitana',
+  title: 'Puestico — Viaja con alguien que ya va hacia tu destino',
   description:
-    'Reservá un puesto en un viaje que ya sale hacia tu destino. Guatire, Caracas, Los Teques y más.',
+    'Reserva un puesto en un viaje que ya sale hacia tu destino. Guatire, Guarenas, Caracas, Los Teques y el litoral.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

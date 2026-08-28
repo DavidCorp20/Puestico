@@ -1,7 +1,8 @@
-import { allTrips } from '../lib/store';
-import { buildRoute, routeDistanceKm } from '../lib/route';
+import { allTrips, freeSeats } from '../lib/store';
+import { buildRoute, routeDistanceKm, routeDuration } from '../lib/route';
 import SearchForm from './SearchForm';
 import TripList from './TripList';
+import Tabs from './Tabs';
 
 export default async function Home({
   searchParams,
@@ -19,13 +20,16 @@ export default async function Home({
   const date = sp.date || '2026-09-01';
   const sort = sp.sort || 'hora';
 
-  let trips = allTrips().filter(
-    (t) =>
-      t.origin === origin &&
-      t.destination === destination &&
-      t.departure_date === date &&
-      t.seats_available > 0,
-  );
+  const sameZone = origin === destination;
+
+  let trips = sameZone
+    ? []
+    : allTrips().filter(
+        (t) =>
+          t.origin === origin &&
+          t.destination === destination &&
+          t.departure_date === date,
+      );
 
   if (sort === 'precio') {
     trips = trips.sort((a, b) => a.price_usd - b.price_usd);
@@ -35,31 +39,50 @@ export default async function Home({
     trips = trips.sort((a, b) => a.departure_time.localeCompare(b.departure_time));
   }
 
-  const km = routeDistanceKm(buildRoute(origin, destination));
+  const route = buildRoute(origin, destination);
+  const km = routeDistanceKm(route);
+  const minutes = routeDuration(route);
 
   // Rutas con viajes disponibles ese día, para sugerir
   const suggestions = Array.from(
     new Map(
       allTrips()
-        .filter((t) => t.departure_date === date && t.seats_available > 0)
+        .filter((t) => t.departure_date === date && freeSeats(t.id) > 0)
         .map((t) => [`${t.origin}|${t.destination}`, t]),
     ).values(),
   ).slice(0, 6);
 
+  // Si no hay nada en esa ruta, ofrecemos otros días con viajes
+  const otherDates = sameZone
+    ? []
+    : Array.from(
+        new Set(
+          allTrips()
+            .filter((t) => t.origin === origin && t.destination === destination)
+            .map((t) => t.departure_date),
+        ),
+      )
+        .filter((d) => d !== date)
+        .slice(0, 3);
+
   return (
     <>
-      <div className="mode-switch">
-        <span className="mode-tab active">Buscar</span>
-        <a href="/mis-viajes" className="mode-tab">Mis viajes</a>
-        <a href="/conductor" className="mode-tab">Soy conductor</a>
-      </div>
+      <Tabs current="buscar" />
 
-      <h1>¿A dónde vas?</h1>
+      <h1>¿Para dónde vas?</h1>
       <p className="subtitle">
-        Reservá un puesto en un viaje que ya sale hacia tu destino.
+        Viaja con alguien que ya va hacia tu destino. Pagas el puesto, no el
+        carro entero.
       </p>
 
       <SearchForm origin={origin} destination={destination} date={date} sort={sort} />
+
+      {sameZone && (
+        <div className="alert alert-warn">
+          <strong>El origen y el destino son el mismo.</strong>
+          Elige dos zonas distintas para poder buscar viajes.
+        </div>
+      )}
 
       <div className="chips">
         <span className="chips-label">Rutas con viajes hoy</span>
@@ -67,8 +90,12 @@ export default async function Home({
           {suggestions.map((t) => (
             <a
               key={`${t.origin}-${t.destination}`}
-              className={`chip ${t.origin === origin && t.destination === destination ? 'chip-on' : ''}`}
-              href={`/?origin=${encodeURIComponent(t.origin)}&destination=${encodeURIComponent(t.destination)}&date=${date}&sort=${sort}`}
+              className={`chip ${
+                t.origin === origin && t.destination === destination ? 'chip-on' : ''
+              }`}
+              href={`/?origin=${encodeURIComponent(t.origin)}&destination=${encodeURIComponent(
+                t.destination,
+              )}&date=${date}&sort=${sort}`}
             >
               {t.origin} → {t.destination}
             </a>
@@ -76,12 +103,18 @@ export default async function Home({
         </div>
       </div>
 
-      <TripList
-        trips={trips}
-        origin={origin}
-        destination={destination}
-        km={km}
-      />
+      {!sameZone && (
+        <TripList
+          trips={trips}
+          origin={origin}
+          destination={destination}
+          date={date}
+          sort={sort}
+          km={km}
+          minutes={minutes}
+          otherDates={otherDates}
+        />
+      )}
     </>
   );
 }

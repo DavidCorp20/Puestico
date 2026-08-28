@@ -1,7 +1,13 @@
-import { findTrip, bookingsForTrip, tripStatus } from '../../../../lib/store';
+import {
+  findTrip,
+  bookingsForTrip,
+  tripStatus,
+  ratingFor,
+} from '../../../../lib/store';
 import RouteMap from '../../../RouteMap';
 import TripControls from './TripControls';
 import Avatar from '../../../Avatar';
+import Stars from '../../../Stars';
 
 export default async function DriverTrip({
   params,
@@ -18,9 +24,10 @@ export default async function DriverTrip({
     return (
       <div className="empty">
         <span className="empty-icon">🤔</span>
-        No encontramos ese viaje.
-        <br />
-        <a className="back-link" href="/conductor">← Volver</a>
+        <strong>No encontramos ese viaje</strong>
+        <a className="btn" href="/conductor" style={{ marginTop: 14 }}>
+          Volver a mis viajes
+        </a>
       </div>
     );
   }
@@ -54,7 +61,7 @@ export default async function DriverTrip({
         </span>
       </div>
 
-      <div className="card" style={{ padding: 12 }}>
+      <div className="card map-card">
         <RouteMap
           origin={trip.origin}
           destination={trip.destination}
@@ -75,7 +82,8 @@ export default async function DriverTrip({
       {active.length === 0 && (
         <div className="empty">
           <span className="empty-icon">🪑</span>
-          Todavía no hay pasajeros confirmados en este viaje.
+          <strong>Todavía no hay pasajeros confirmados</strong>
+          Cuando aceptes una solicitud, el pasajero aparece acá.
         </div>
       )}
       {active.map((b) => (
@@ -85,8 +93,12 @@ export default async function DriverTrip({
             <div>
               <div className="driver-name">{b.passenger_name}</div>
               <div className="driver-meta">
-                ⭐ {b.passenger_rating.toFixed(1)} · {b.seats}{' '}
-                {b.seats === 1 ? 'puesto' : 'puestos'}
+                <Stars
+                  value={ratingFor(b.passenger_name, b.passenger_rating).value}
+                  showValue
+                />
+                <span className="sep">·</span>
+                {b.seats} {b.seats === 1 ? 'puesto' : 'puestos'}
               </div>
             </div>
             <span className="seats-tag">${b.driver_amount_usd.toFixed(2)}</span>

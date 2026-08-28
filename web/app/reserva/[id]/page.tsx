@@ -1,6 +1,8 @@
 import { priceBreakdown, TEST_USERS } from '../../../lib/data';
-import { findTrip } from '../../../lib/store';
+import { findTrip, freeSeats, ratingFor } from '../../../lib/store';
 import PayButton from './PayButton';
+import Avatar from '../../Avatar';
+import Stars from '../../Stars';
 
 export default async function Reserva({
   params,
@@ -20,9 +22,11 @@ export default async function Reserva({
     return (
       <div className="empty">
         <span className="empty-icon">🤔</span>
-        No encontramos ese viaje.
-        <br />
-        <a className="back-link" href="/">← Volver a buscar</a>
+        <strong>No encontramos ese viaje</strong>
+        Puede que el conductor lo haya dado de baja.
+        <a className="btn" href="/" style={{ marginTop: 14 }}>
+          Volver a buscar
+        </a>
       </div>
     );
   }
@@ -37,22 +41,25 @@ export default async function Reserva({
           <span className="success-icon">✅</span>
           <h1>¡Reserva confirmada!</h1>
           <p className="subtitle" style={{ marginBottom: 0 }}>
-            Le llegó tu solicitud a {trip.driver.name.split(' ')[0]}. Te avisamos
-            apenas la acepte.
+            Le llegó tu solicitud a {trip.driver.name.split(' ')[0]}. Te
+            avisamos en cuanto la acepte.
           </p>
         </div>
 
         <div className="card">
           <h2>Tu conductor</h2>
           <div className="driver-row" style={{ borderTop: 'none', paddingTop: 0 }}>
-            <div className="avatar" style={{ width: 52, height: 52, fontSize: '1.6rem' }}>
-              {trip.driver.photo}
-            </div>
+            <Avatar name={trip.driver.name} size={52} />
             <div>
               <div className="driver-name" style={{ fontSize: '1.05rem' }}>
                 {trip.driver.name}
               </div>
-              <div className="driver-meta">⭐ {trip.driver.rating.toFixed(1)}</div>
+              <div className="driver-meta">
+                <Stars
+                  value={ratingFor(trip.driver.name, trip.driver.rating).value}
+                  showValue
+                />
+              </div>
             </div>
           </div>
 
@@ -92,6 +99,28 @@ export default async function Reserva({
           </div>
         </div>
 
+        <div className="card">
+          <h2>Qué sigue</h2>
+          <ol className="steps">
+            <li className="done">
+              <span>Pagaste tu puesto</span>
+              <small>El monto queda retenido hasta que el conductor acepte.</small>
+            </li>
+            <li className="now">
+              <span>{trip.driver.name.split(' ')[0]} confirma tu puesto</span>
+              <small>Te avisamos en Mis viajes en cuanto responda.</small>
+            </li>
+            <li>
+              <span>Se coordinan el punto de encuentro</span>
+              <small>Por WhatsApp, una vez confirmada la reserva.</small>
+            </li>
+            <li>
+              <span>Viajan y se califican</span>
+              <small>Al cerrar el viaje puedes calificar al conductor.</small>
+            </li>
+          </ol>
+        </div>
+
         <div className="stack">
           <a className="btn" href={`/mis-viajes?passenger=${passenger.id}`}>
             Ver mis viajes
@@ -107,8 +136,8 @@ export default async function Reserva({
     <>
       <a className="back-link" href={`/viaje/${trip.id}`}>← Volver al viaje</a>
 
-      <h1>Confirmá y pagá</h1>
-      <p className="subtitle">Revisá que esté todo bien antes de confirmar.</p>
+      <h1>Confirma y paga</h1>
+      <p className="subtitle">Revisa que todo esté bien antes de confirmar.</p>
 
       <div className="card">
         <h2>Resumen</h2>

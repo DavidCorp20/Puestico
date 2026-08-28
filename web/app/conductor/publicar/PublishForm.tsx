@@ -113,7 +113,7 @@ export default function PublishForm({ driverId }: { driverId: string }) {
           <span>−${commission.toFixed(2)}</span>
         </div>
         <div className="row row-total">
-          <span>Recibís</span>
+          <span>Recibes</span>
           <span>${net.toFixed(2)}</span>
         </div>
       </div>
@@ -121,7 +121,7 @@ export default function PublishForm({ driverId }: { driverId: string }) {
       {error && <p className="error-text">{error}</p>}
 
       <button className="btn" type="submit" disabled={busy || sameZone} style={{ marginTop: 16 }}>
-        {busy ? 'Publicando…' : 'Publicar viaje'}
+        {busy ? <><span className="spinner" /> Publicando…</> : 'Publicar viaje'}
       </button>
     </form>
   );

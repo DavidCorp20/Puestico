@@ -194,7 +194,7 @@ export default function RouteMap({
         </div>
       </div>
 
-      <p className="map-hint">Tocá cualquier parada del mapa para ver su detalle.</p>
+      <p className="map-hint">Toca cualquier parada del mapa para ver su detalle.</p>
     </div>
   );
 }

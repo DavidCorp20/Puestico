@@ -1,6 +1,14 @@
 import { NextResponse } from 'next/server';
 import { priceBreakdown, passengerById, TEST_USERS } from '../../../lib/data';
-import { store, findTrip, nextId, bookingsForTrip } from '../../../lib/store';
+import {
+  store,
+  findTrip,
+  nextId,
+  bookingsForTrip,
+  getBooking,
+  refundFor,
+  departureDate,
+} from '../../../lib/store';
 
 /**
  * Crea una solicitud de reserva.
@@ -13,7 +21,20 @@ import { store, findTrip, nextId, bookingsForTrip } from '../../../lib/store';
  * La reserva nace en 'pending': el conductor tiene que aceptarla.
  */
 export async function POST(request: Request) {
-  const { trip_id, passenger_id, seats } = await request.json();
+  const { trip_id, passenger_id, seats, simulate } = await request.json();
+
+  // Modo demo: permite provocar a mano un pago rechazado, para poder
+  // mostrar el camino de error y no solo el camino feliz.
+  if (simulate === 'payment_declined') {
+    return NextResponse.json(
+      {
+        error:
+          'El pago fue rechazado por el banco emisor. No se te cobró nada; intenta con otro medio de pago.',
+        code: 'PAYMENT_DECLINED',
+      },
+      { status: 402 },
+    );
+  }
 
   const trip = findTrip(trip_id);
   if (!trip) {
@@ -22,7 +43,7 @@ export async function POST(request: Request) {
 
   if (trip.driver.id === passenger_id) {
     return NextResponse.json(
-      { error: 'No podés reservar tu propio viaje' },
+      { error: 'No puedes reservar tu propio viaje' },
       { status: 400 },
     );
   }
@@ -37,7 +58,7 @@ export async function POST(request: Request) {
 
   if (requested > free) {
     return NextResponse.json(
-      { error: free > 0 ? `Solo quedan ${free} puesto(s)` : 'No quedan puestos' },
+      { error: free > 0 ? `Solo queda${free === 1 ? '' : 'n'} ${free} puesto${free === 1 ? '' : 's'} en este viaje` : 'No quedan puestos' },
       { status: 409 },
     );
   }
@@ -65,6 +86,44 @@ export async function POST(request: Request) {
 
   store.bookings.push(booking);
   return NextResponse.json(booking, { status: 201 });
+}
+
+/**
+ * Cancela una reserva aplicando la política real:
+ * más de 2 horas antes devuelve todo, menos de 2 horas la mitad.
+ */
+export async function DELETE(request: Request) {
+  const { booking_id } = await request.json();
+
+  const booking = getBooking(booking_id);
+  if (!booking) {
+    return NextResponse.json({ error: 'Reserva no encontrada' }, { status: 404 });
+  }
+  if (booking.status === 'cancelled') {
+    return NextResponse.json({ error: 'Ya está cancelada' }, { status: 400 });
+  }
+  if (booking.status === 'completed') {
+    return NextResponse.json(
+      { error: 'No se puede cancelar un viaje ya finalizado' },
+      { status: 400 },
+    );
+  }
+
+  const { refund, full } = refundFor(booking, departureDate(booking.trip_id));
+
+  // Si estaba confirmada, el puesto vuelve a estar disponible
+  if (booking.status === 'confirmed') {
+    const trip = findTrip(booking.trip_id);
+    if (trip) trip.seats_available += booking.seats;
+  }
+
+  booking.status = 'cancelled';
+
+  return NextResponse.json({
+    ok: true,
+    refund_usd: refund,
+    full_refund: full,
+  });
 }
 
 export async function GET() {

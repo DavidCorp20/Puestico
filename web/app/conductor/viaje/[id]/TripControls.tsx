@@ -57,7 +57,7 @@ export default function TripControls({
   if (status === 'active') {
     return (
       <button className="btn" onClick={() => act('finish')} disabled={busy}>
-        {busy ? 'Cerrando…' : 'Finalizar viaje'}
+        {busy ? <><span className="spinner" /> Cerrando el viaje…</> : 'Finalizar viaje'}
       </button>
     );
   }
@@ -69,11 +69,11 @@ export default function TripControls({
         onClick={() => act('start')}
         disabled={busy || passengers === 0}
       >
-        {busy ? 'Iniciando…' : 'Iniciar viaje'}
+        {busy ? <><span className="spinner" /> Iniciando…</> : 'Iniciar viaje'}
       </button>
       {passengers === 0 && (
         <p className="note">
-          Necesitás al menos un pasajero confirmado para iniciar el viaje.
+          Necesitas al menos un pasajero confirmado para iniciar el viaje.
         </p>
       )}
     </>
