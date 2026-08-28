@@ -9,7 +9,7 @@
  * esto se reemplaza por los repositorios de la API.
  */
 
-import { TRIPS, type Trip } from './data';
+import { TRIPS, MORE_TRIPS, type Trip } from './data';
 
 export type BookingStatus =
   | 'pending'
@@ -58,7 +58,7 @@ export const store: Store =
   });
 
 export function allTrips(): Trip[] {
-  return [...TRIPS, ...store.extraTrips];
+  return [...TRIPS, ...MORE_TRIPS, ...store.extraTrips];
 }
 
 export function findTrip(id: string): Trip | undefined {

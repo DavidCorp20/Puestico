@@ -1,26 +1,50 @@
-import { ORIGINS, DESTINATIONS } from '../lib/data';
 import { allTrips } from '../lib/store';
+import { buildRoute, routeDistanceKm } from '../lib/route';
+import SearchForm from './SearchForm';
 import TripList from './TripList';
 
 export default async function Home({
   searchParams,
 }: {
-  searchParams: Promise<{ origin?: string; destination?: string; date?: string }>;
+  searchParams: Promise<{
+    origin?: string;
+    destination?: string;
+    date?: string;
+    sort?: string;
+  }>;
 }) {
   const sp = await searchParams;
   const origin = sp.origin || 'Guatire';
-  const destination = sp.destination || 'Caracas';
+  const destination = sp.destination || 'Chacaíto';
   const date = sp.date || '2026-09-01';
-  const searched = Boolean(sp.origin);
-  const trips = allTrips()
-    .filter(
-      (t) =>
-        t.origin === origin &&
-        t.destination === destination &&
-        t.departure_date === date &&
-        t.seats_available > 0,
-    )
-    .sort((a, b) => a.departure_time.localeCompare(b.departure_time));
+  const sort = sp.sort || 'hora';
+
+  let trips = allTrips().filter(
+    (t) =>
+      t.origin === origin &&
+      t.destination === destination &&
+      t.departure_date === date &&
+      t.seats_available > 0,
+  );
+
+  if (sort === 'precio') {
+    trips = trips.sort((a, b) => a.price_usd - b.price_usd);
+  } else if (sort === 'rating') {
+    trips = trips.sort((a, b) => b.driver.rating - a.driver.rating);
+  } else {
+    trips = trips.sort((a, b) => a.departure_time.localeCompare(b.departure_time));
+  }
+
+  const km = routeDistanceKm(buildRoute(origin, destination));
+
+  // Rutas con viajes disponibles ese día, para sugerir
+  const suggestions = Array.from(
+    new Map(
+      allTrips()
+        .filter((t) => t.departure_date === date && t.seats_available > 0)
+        .map((t) => [`${t.origin}|${t.destination}`, t]),
+    ).values(),
+  ).slice(0, 6);
 
   return (
     <>
@@ -35,36 +59,29 @@ export default async function Home({
         Reservá un puesto en un viaje que ya sale hacia tu destino.
       </p>
 
-      <form className="card search-form" method="get">
-        <div className="field">
-          <label htmlFor="origin">Desde</label>
-          <select id="origin" name="origin" defaultValue={origin}>
-            {ORIGINS.map((o) => (
-              <option key={o} value={o}>{o}</option>
-            ))}
-          </select>
-        </div>
+      <SearchForm origin={origin} destination={destination} date={date} sort={sort} />
 
-        <div className="field">
-          <label htmlFor="destination">Hasta</label>
-          <select id="destination" name="destination" defaultValue={destination}>
-            {DESTINATIONS.map((d) => (
-              <option key={d} value={d}>{d}</option>
-            ))}
-          </select>
+      <div className="chips">
+        <span className="chips-label">Rutas con viajes hoy</span>
+        <div className="chips-row">
+          {suggestions.map((t) => (
+            <a
+              key={`${t.origin}-${t.destination}`}
+              className={`chip ${t.origin === origin && t.destination === destination ? 'chip-on' : ''}`}
+              href={`/?origin=${encodeURIComponent(t.origin)}&destination=${encodeURIComponent(t.destination)}&date=${date}&sort=${sort}`}
+            >
+              {t.origin} → {t.destination}
+            </a>
+          ))}
         </div>
+      </div>
 
-        <div className="field full">
-          <label htmlFor="date">Fecha</label>
-          <input id="date" name="date" type="date" defaultValue={date} />
-        </div>
-
-        <div className="field full">
-          <button className="btn" type="submit">Buscar viajes</button>
-        </div>
-      </form>
-
-      <TripList trips={trips} searched={searched} origin={origin} destination={destination} />
+      <TripList
+        trips={trips}
+        origin={origin}
+        destination={destination}
+        km={km}
+      />
     </>
   );
 }

@@ -73,7 +73,7 @@ export const TRIPS: Trip[] = [
     driver: DRIVERS.d1,
     vehicle: { plate: 'ABC-12A', model: 'Toyota Corolla', year: 2018, color: 'Blanco' },
     origin: 'Guatire',
-    destination: 'Caracas',
+    destination: 'Chacaíto',
     departure_date: '2026-09-01',
     departure_time: '06:30',
     seats_total: 3,
@@ -85,7 +85,7 @@ export const TRIPS: Trip[] = [
     driver: DRIVERS.d2,
     vehicle: { plate: 'XYZ-45B', model: 'Chevrolet Aveo', year: 2016, color: 'Plata' },
     origin: 'Guatire',
-    destination: 'Caracas',
+    destination: 'Chacaíto',
     departure_date: '2026-09-01',
     departure_time: '07:00',
     seats_total: 3,
@@ -97,7 +97,7 @@ export const TRIPS: Trip[] = [
     driver: DRIVERS.d4,
     vehicle: { plate: 'GHI-90D', model: 'Honda Civic', year: 2019, color: 'Rojo' },
     origin: 'Guatire',
-    destination: 'Caracas',
+    destination: 'Chacaíto',
     departure_date: '2026-09-01',
     departure_time: '08:15',
     seats_total: 4,
@@ -109,7 +109,7 @@ export const TRIPS: Trip[] = [
     driver: DRIVERS.d3,
     vehicle: { plate: 'DEF-78C', model: 'Ford Fiesta', year: 2020, color: 'Negro' },
     origin: 'Guarenas',
-    destination: 'Caracas',
+    destination: 'Chacaíto',
     departure_date: '2026-09-01',
     departure_time: '06:45',
     seats_total: 4,
@@ -120,7 +120,7 @@ export const TRIPS: Trip[] = [
     id: 't3000000-0000-0000-0000-000000000006',
     driver: DRIVERS.d1,
     vehicle: { plate: 'ABC-12A', model: 'Toyota Corolla', year: 2018, color: 'Blanco' },
-    origin: 'Caracas',
+    origin: 'Chacaíto',
     destination: 'Guatire',
     departure_date: '2026-09-01',
     departure_time: '17:30',
@@ -137,8 +137,68 @@ export const TEST_USERS = [
   { id: 'p2000000-0000-0000-0000-000000000003', name: 'Diego Torres', rating: 4.0 },
 ];
 
-export const ORIGINS = ['Guatire', 'Guarenas', 'Caracas'];
-export const DESTINATIONS = ['Caracas', 'Guatire', 'Guarenas'];
+
+/** Viajes adicionales que cubren más zonas del área metropolitana. */
+export const MORE_TRIPS: Trip[] = [
+  {
+    id: 't-zona-01', driver: DRIVERS.d2,
+    vehicle: { plate: 'XYZ-45B', model: 'Chevrolet Aveo', year: 2016, color: 'Plata' },
+    origin: 'Guatire', destination: 'Chacao',
+    departure_date: '2026-09-01', departure_time: '06:15',
+    seats_total: 3, seats_available: 3, price_usd: 9.0,
+  },
+  {
+    id: 't-zona-02', driver: DRIVERS.d3,
+    vehicle: { plate: 'DEF-78C', model: 'Ford Fiesta', year: 2020, color: 'Negro' },
+    origin: 'Guarenas', destination: 'Altamira',
+    departure_date: '2026-09-01', departure_time: '06:50',
+    seats_total: 4, seats_available: 3, price_usd: 7.5,
+  },
+  {
+    id: 't-zona-03', driver: DRIVERS.d4,
+    vehicle: { plate: 'GHI-90D', model: 'Honda Civic', year: 2019, color: 'Rojo' },
+    origin: 'Los Teques', destination: 'Centro de Caracas',
+    departure_date: '2026-09-01', departure_time: '06:00',
+    seats_total: 4, seats_available: 4, price_usd: 6.5,
+  },
+  {
+    id: 't-zona-04', driver: DRIVERS.d1,
+    vehicle: { plate: 'ABC-12A', model: 'Toyota Corolla', year: 2018, color: 'Blanco' },
+    origin: 'La Guaira', destination: 'Centro de Caracas',
+    departure_date: '2026-09-01', departure_time: '07:20',
+    seats_total: 3, seats_available: 2, price_usd: 8.5,
+  },
+  {
+    id: 't-zona-05', driver: DRIVERS.d2,
+    vehicle: { plate: 'XYZ-45B', model: 'Chevrolet Aveo', year: 2016, color: 'Plata' },
+    origin: 'Petare', destination: 'Catia',
+    departure_date: '2026-09-01', departure_time: '07:45',
+    seats_total: 4, seats_available: 4, price_usd: 5.0,
+  },
+  {
+    id: 't-zona-06', driver: DRIVERS.d3,
+    vehicle: { plate: 'DEF-78C', model: 'Ford Fiesta', year: 2020, color: 'Negro' },
+    origin: 'Maiquetía', destination: 'Centro de Caracas',
+    departure_date: '2026-09-01', departure_time: '05:40',
+    seats_total: 4, seats_available: 4, price_usd: 8.0,
+  },
+  {
+    id: 't-zona-07', driver: DRIVERS.d4,
+    vehicle: { plate: 'GHI-90D', model: 'Honda Civic', year: 2019, color: 'Rojo' },
+    origin: 'Guatire', destination: 'Las Mercedes',
+    departure_date: '2026-09-01', departure_time: '07:10',
+    seats_total: 3, seats_available: 3, price_usd: 9.5,
+  },
+  {
+    id: 't-zona-08', driver: DRIVERS.d1,
+    vehicle: { plate: 'ABC-12A', model: 'Toyota Corolla', year: 2018, color: 'Blanco' },
+    origin: 'Chacaíto', destination: 'Guatire',
+    departure_date: '2026-09-01', departure_time: '18:00',
+    seats_total: 3, seats_available: 3, price_usd: 8.0,
+  },
+];
+
+export { ZONES, zonesByArea } from './route';
 
 export function searchTrips(origin: string, destination: string, date: string): Trip[] {
   return TRIPS.filter(

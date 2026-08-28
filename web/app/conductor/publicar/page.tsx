@@ -1,4 +1,4 @@
-import { TEST_DRIVERS, ORIGINS, DESTINATIONS } from '../../../lib/data';
+import { TEST_DRIVERS } from '../../../lib/data';
 import PublishForm from './PublishForm';
 
 export default async function Publicar({
@@ -19,11 +19,7 @@ export default async function Publicar({
         Contá cuándo salís y cuántos puestos tenés libres.
       </p>
 
-      <PublishForm
-        driverId={driverId}
-        origins={ORIGINS}
-        destinations={DESTINATIONS}
-      />
+      <PublishForm driverId={driverId} />
     </>
   );
 }
