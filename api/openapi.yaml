@@ -1,0 +1,1487 @@
+openapi: 3.0.3
+info:
+  title: Carpooling VE API
+  description: |
+    API para la plataforma de carpooling interurbano de Venezuela.
+    Corredor inicial: Guatire ↔ Caracas.
+    MVP — Mes 3.
+  version: 0.1.0
+  contact:
+    name: Engineer
+servers:
+  - url: https://api.staging.carpooling.ve
+    description: Staging
+  - url: http://localhost:3000
+    description: Local dev
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Auth
+    description: Registro, OTP y sesiones
+  - name: Users
+    description: Perfil de usuario
+  - name: Drivers
+    description: Perfil de conductor y verificación
+  - name: Vehicles
+    description: Registro y gestión de vehículos
+  - name: Trips
+    description: Publicación y búsqueda de viajes
+  - name: Bookings
+    description: Reservas de puestos
+  - name: Payments
+    description: Pagos y conciliación
+  - name: Reviews
+    description: Calificaciones bidireccionales
+  - name: Incidents
+    description: Reportes de incidentes y botón de pánico
+  - name: Chat
+    description: Chat conductor ↔ pasajero
+  - name: Admin
+    description: Panel administrativo
+
+paths:
+  # ─── AUTH ───
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Registrar nuevo usuario (pasajero o conductor)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Usuario creado, OTP enviado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+
+  /auth/verify-otp:
+    post:
+      tags: [Auth]
+      summary: Verificar código OTP
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone, code]
+              properties:
+                phone:
+                  type: string
+                  example: "+584121234567"
+                code:
+                  type: string
+                  example: "123456"
+      responses:
+        '200':
+          description: OTP verificado, sesión iniciada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Código inválido o expirado
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Iniciar sesión con teléfono + OTP
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone]
+              properties:
+                phone:
+                  type: string
+                  example: "+584121234567"
+      responses:
+        '200':
+          description: OTP enviado al teléfono
+
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Perfil del usuario autenticado
+      responses:
+        '200':
+          description: Usuario actual
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+  # ─── USERS ───
+  /users/{id}:
+    get:
+      tags: [Users]
+      summary: Obtener usuario por ID
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        '200':
+          description: Usuario encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+    patch:
+      tags: [Users]
+      summary: Actualizar perfil
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdate'
+      responses:
+        '200':
+          description: Usuario actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+  # ─── DRIVERS ───
+  /drivers/me:
+    get:
+      tags: [Drivers]
+      summary: Perfil de conductor del usuario autenticado
+      responses:
+        '200':
+          description: Perfil de conductor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DriverProfile'
+
+  /drivers/me/documents:
+    post:
+      tags: [Drivers]
+      summary: Subir documento de verificación (cédula, licencia, seguro)
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                doc_type:
+                  type: string
+                  enum: [cedula, licencia, seguro, vehicle_photo]
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: Documento subido, en revisión
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificationDocument'
+
+  /drivers/me/verification-status:
+    get:
+      tags: [Drivers]
+      summary: Estado de verificación del conductor
+      responses:
+        '200':
+          description: Estado actual
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [pending, in_review, approved, rejected]
+                  missing_documents:
+                    type: array
+                    items:
+                      type: string
+                  estimated_hours:
+                    type: integer
+                    example: 48
+
+  # ─── VEHICLES ───
+  /vehicles:
+    post:
+      tags: [Vehicles]
+      summary: Registrar vehículo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VehicleCreate'
+      responses:
+        '201':
+          description: Vehículo registrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Vehicle'
+    get:
+      tags: [Vehicles]
+      summary: Listar vehículos del conductor
+      responses:
+        '200':
+          description: Lista de vehículos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Vehicle'
+
+  /vehicles/{id}:
+    get:
+      tags: [Vehicles]
+      summary: Obtener vehículo por ID
+      parameters:
+        - $ref: '#/components/parameters/VehicleId'
+      responses:
+        '200':
+          description: Vehículo encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Vehicle'
+
+  # ─── TRIPS ───
+  /trips:
+    post:
+      tags: [Trips]
+      summary: Publicar viaje
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TripCreate'
+      responses:
+        '201':
+          description: Viaje publicado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Trip'
+    get:
+      tags: [Trips]
+      summary: Buscar viajes disponibles
+      security: []
+      parameters:
+        - name: origin
+          in: query
+          required: true
+          schema:
+            type: string
+          example: "Guatire"
+        - name: destination
+          in: query
+          required: true
+          schema:
+            type: string
+          example: "Caracas"
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          example: "2026-09-01"
+        - name: passengers
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: lat
+          in: query
+          schema:
+            type: number
+            format: float
+        - name: lng
+          in: query
+          schema:
+            type: number
+            format: float
+        - name: radius_km
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Viajes encontrados
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TripSearchResult'
+
+  /trips/{id}:
+    get:
+      tags: [Trips]
+      summary: Detalle de viaje
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/TripId'
+      responses:
+        '200':
+          description: Detalle del viaje
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Trip'
+    patch:
+      tags: [Trips]
+      summary: Actualizar viaje (conductor)
+      parameters:
+        - $ref: '#/components/parameters/TripId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TripUpdate'
+      responses:
+        '200':
+          description: Viaje actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Trip'
+    delete:
+      tags: [Trips]
+      summary: Cancelar viaje (conductor)
+      parameters:
+        - $ref: '#/components/parameters/TripId'
+      responses:
+        '204':
+          description: Viaje cancelado
+
+  /trips/{id}/status:
+    patch:
+      tags: [Trips]
+      summary: Cambiar estado del viaje (active, completed, cancelled)
+      parameters:
+        - $ref: '#/components/parameters/TripId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [active, completed, cancelled]
+      responses:
+        '200':
+          description: Estado actualizado
+
+  /trips/{id}/location:
+    post:
+      tags: [Trips]
+      summary: Actualizar ubicación GPS del viaje en curso
+      parameters:
+        - $ref: '#/components/parameters/TripId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [lat, lng]
+              properties:
+                lat:
+                  type: number
+                  format: float
+                lng:
+                  type: number
+                  format: float
+                speed:
+                  type: number
+                  format: float
+      responses:
+        '204':
+          description: Ubicación actualizada
+
+  # ─── BOOKINGS ───
+  /bookings:
+    post:
+      tags: [Bookings]
+      summary: Reservar puesto en un viaje
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookingCreate'
+      responses:
+        '201':
+          description: Reserva creada (pendiente de pago)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+    get:
+      tags: [Bookings]
+      summary: Listar mis reservas
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, confirmed, completed, cancelled, no_show]
+      responses:
+        '200':
+          description: Lista de reservas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Booking'
+
+  /bookings/{id}:
+    get:
+      tags: [Bookings]
+      summary: Detalle de reserva
+      parameters:
+        - $ref: '#/components/parameters/BookingId'
+      responses:
+        '200':
+          description: Reserva encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+
+  /bookings/{id}/cancel:
+    post:
+      tags: [Bookings]
+      summary: Cancelar reserva (aplica política de reembolso)
+      parameters:
+        - $ref: '#/components/parameters/BookingId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Reserva cancelada, reembolso procesado según política
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+
+  /bookings/{id}/accept:
+    post:
+      tags: [Bookings]
+      summary: Conductor acepta solicitud de reserva
+      parameters:
+        - $ref: '#/components/parameters/BookingId'
+      responses:
+        '200':
+          description: Reserva confirmada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+
+  /bookings/{id}/reject:
+    post:
+      tags: [Bookings]
+      summary: Conductor rechaza solicitud de reserva
+      parameters:
+        - $ref: '#/components/parameters/BookingId'
+      responses:
+        '200':
+          description: Reserva rechazada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+
+  # ─── PAYMENTS ───
+  /payments:
+    post:
+      tags: [Payments]
+      summary: Procesar pago de reserva
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentCreate'
+      responses:
+        '201':
+          description: Pago registrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+
+  /payments/{id}:
+    get:
+      tags: [Payments]
+      summary: Detalle de pago
+      parameters:
+        - $ref: '#/components/parameters/PaymentId'
+      responses:
+        '200':
+          description: Pago encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+
+  /payments/{id}/confirm:
+    post:
+      tags: [Payments]
+      summary: Confirmar recepción de transferencia (admin / conciliación)
+      parameters:
+        - $ref: '#/components/parameters/PaymentId'
+      responses:
+        '200':
+          description: Pago confirmado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+
+  # ─── REVIEWS ───
+  /reviews:
+    post:
+      tags: [Reviews]
+      summary: Calificar al otro participante del viaje
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewCreate'
+      responses:
+        '201':
+          description: Calificación registrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Review'
+
+  /reviews/user/{userId}:
+    get:
+      tags: [Reviews]
+      summary: Calificaciones recibidas por un usuario
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        '200':
+          description: Lista de calificaciones
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Review'
+
+  # ─── INCIDENTS ───
+  /incidents:
+    post:
+      tags: [Incidents]
+      summary: Reportar incidente
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IncidentCreate'
+      responses:
+        '201':
+          description: Incidente creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incident'
+
+  /incidents/panic:
+    post:
+      tags: [Incidents]
+      summary: Botón de pánico — notifica inmediatamente a operaciones
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [trip_id, lat, lng]
+              properties:
+                trip_id:
+                  type: string
+                  format: uuid
+                lat:
+                  type: number
+                  format: float
+                lng:
+                  type: number
+                  format: float
+                message:
+                  type: string
+      responses:
+        '201':
+          description: Alerta de pánico enviada a operaciones
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incident'
+
+  # ─── CHAT ───
+  /chat/conversations:
+    get:
+      tags: [Chat]
+      summary: Listar conversaciones del usuario
+      responses:
+        '200':
+          description: Lista de conversaciones
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Conversation'
+
+  /chat/conversations/{id}/messages:
+    get:
+      tags: [Chat]
+      summary: Mensajes de una conversación
+      parameters:
+        - $ref: '#/components/parameters/ConversationId'
+        - name: before
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        '200':
+          description: Mensajes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ChatMessage'
+    post:
+      tags: [Chat]
+      summary: Enviar mensaje
+      parameters:
+        - $ref: '#/components/parameters/ConversationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [content]
+              properties:
+                content:
+                  type: string
+      responses:
+        '201':
+          description: Mensaje enviado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatMessage'
+
+  # ─── ADMIN ───
+  /admin/drivers/pending:
+    get:
+      tags: [Admin]
+      summary: Cola de conductores pendientes de verificación
+      responses:
+        '200':
+          description: Lista de conductores pendientes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DriverProfile'
+
+  /admin/drivers/{id}/approve:
+    post:
+      tags: [Admin]
+      summary: Aprobar conductor
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        '200':
+          description: Conductor aprobado
+
+  /admin/drivers/{id}/reject:
+    post:
+      tags: [Admin]
+      summary: Rechazar conductor
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Conductor rechazado
+
+  /admin/payments/pending:
+    get:
+      tags: [Admin]
+      summary: Pagos pendientes de conciliación
+      responses:
+        '200':
+          description: Lista de pagos pendientes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Payment'
+
+  /admin/payments/report:
+    get:
+      tags: [Admin]
+      summary: Reporte de comisiones (semanal/mensual)
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [weekly, monthly]
+            default: weekly
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Reporte de comisiones
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_payments:
+                    type: integer
+                  total_gross:
+                    type: number
+                    format: float
+                  total_commission:
+                    type: number
+                    format: float
+                  total_driver_payout:
+                    type: number
+                    format: float
+                  by_method:
+                    type: object
+
+  /admin/incidents:
+    get:
+      tags: [Admin]
+      summary: Cola de incidentes
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [open, investigating, resolved]
+      responses:
+        '200':
+          description: Lista de incidentes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Incident'
+
+  /admin/audit-log:
+    get:
+      tags: [Admin]
+      summary: Audit log de acciones administrativas
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+        - name: actor_id
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Entradas del audit log
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+                    actor_id:
+                      type: string
+                    action:
+                      type: string
+                    target_type:
+                      type: string
+                    target_id:
+                      type: string
+                    metadata:
+                      type: object
+                    created_at:
+                      type: string
+                      format: date-time
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    UserId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    VehicleId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    TripId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    BookingId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    PaymentId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    ConversationId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  schemas:
+    RegisterRequest:
+      type: object
+      required: [name, phone, id_doc, role]
+      properties:
+        name:
+          type: string
+          example: "Carlos Rodríguez"
+        phone:
+          type: string
+          example: "+584121234567"
+        email:
+          type: string
+          format: email
+        id_doc:
+          type: string
+          description: Cédula de identidad
+          example: "V-12345678"
+        role:
+          type: string
+          enum: [passenger, driver]
+        selfie_url:
+          type: string
+          description: URL de la selfie subida
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: JWT token
+        user:
+          $ref: '#/components/schemas/User'
+        otp_sent:
+          type: boolean
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+        id_doc:
+          type: string
+        role:
+          type: string
+          enum: [passenger, driver, admin]
+        status:
+          type: string
+          enum: [active, suspended, blocked]
+        rating:
+          type: number
+          format: float
+          description: Calificación promedio
+        completed_trips:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    UserUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        selfie_url:
+          type: string
+
+    DriverProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        verified:
+          type: boolean
+        verification_status:
+          type: string
+          enum: [pending, in_review, approved, rejected]
+        vehicle_id:
+          type: string
+          format: uuid
+          nullable: true
+        rating:
+          type: number
+          format: float
+        completed_trips:
+          type: integer
+        total_earnings_usd:
+          type: number
+          format: float
+        documents:
+          type: array
+          items:
+            $ref: '#/components/schemas/VerificationDocument'
+        created_at:
+          type: string
+          format: date-time
+
+    VerificationDocument:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        doc_type:
+          type: string
+          enum: [cedula, licencia, seguro, vehicle_photo]
+        file_url:
+          type: string
+        status:
+          type: string
+          enum: [pending, approved, rejected]
+        rejection_reason:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    Vehicle:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        owner_id:
+          type: string
+          format: uuid
+        plate:
+          type: string
+          example: "ABC-123"
+        model:
+          type: string
+          example: "Toyota Corolla"
+        year:
+          type: integer
+          example: 2018
+        color:
+          type: string
+          example: "Blanco"
+        seats:
+          type: integer
+          example: 4
+        photos:
+          type: array
+          items:
+            type: string
+            description: S3 URL
+        created_at:
+          type: string
+          format: date-time
+
+    VehicleCreate:
+      type: object
+      required: [plate, model, year, seats]
+      properties:
+        plate:
+          type: string
+        model:
+          type: string
+        year:
+          type: integer
+        color:
+          type: string
+        seats:
+          type: integer
+        photos:
+          type: array
+          items:
+            type: string
+
+    Trip:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        driver_id:
+          type: string
+          format: uuid
+        vehicle_id:
+          type: string
+          format: uuid
+        origin:
+          type: string
+          example: "Guatire"
+        destination:
+          type: string
+          example: "Caracas"
+        origin_coords:
+          $ref: '#/components/schemas/GeoPoint'
+        destination_coords:
+          $ref: '#/components/schemas/GeoPoint'
+        departure_date:
+          type: string
+          format: date
+        departure_time:
+          type: string
+          example: "06:30"
+        seats_total:
+          type: integer
+        seats_available:
+          type: integer
+        price_per_seat_usd:
+          type: number
+          format: float
+          example: 8.00
+        price_per_seat_bs:
+          type: number
+          format: float
+          nullable: true
+        status:
+          type: string
+          enum: [scheduled, active, completed, cancelled]
+        created_at:
+          type: string
+          format: date-time
+
+    TripCreate:
+      type: object
+      required: [origin, destination, departure_date, departure_time, seats_total, price_per_seat_usd]
+      properties:
+        origin:
+          type: string
+        destination:
+          type: string
+        origin_lat:
+          type: number
+        origin_lng:
+          type: number
+        destination_lat:
+          type: number
+        destination_lng:
+          type: number
+        departure_date:
+          type: string
+          format: date
+        departure_time:
+          type: string
+        seats_total:
+          type: integer
+        price_per_seat_usd:
+          type: number
+          format: float
+        price_per_seat_bs:
+          type: number
+          format: float
+          nullable: true
+        vehicle_id:
+          type: string
+          format: uuid
+
+    TripUpdate:
+      type: object
+      properties:
+        departure_time:
+          type: string
+        seats_total:
+          type: integer
+        price_per_seat_usd:
+          type: number
+          format: float
+
+    TripSearchResult:
+      allOf:
+        - $ref: '#/components/schemas/Trip'
+        - type: object
+          properties:
+            driver_name:
+              type: string
+            driver_rating:
+              type: number
+              format: float
+            driver_photo:
+              type: string
+            vehicle_plate:
+              type: string
+            vehicle_model:
+              type: string
+            distance_km:
+              type: number
+              format: float
+              description: Distancia al origen del pasajero
+
+    Booking:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        trip_id:
+          type: string
+          format: uuid
+        passenger_id:
+          type: string
+          format: uuid
+        seats:
+          type: integer
+        status:
+          type: string
+          enum: [pending, confirmed, completed, cancelled, no_show]
+        payment_id:
+          type: string
+          format: uuid
+          nullable: true
+        cancellation_reason:
+          type: string
+          nullable: true
+        refund_amount:
+          type: number
+          format: float
+          nullable: true
+        refund_percentage:
+          type: integer
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    BookingCreate:
+      type: object
+      required: [trip_id, seats]
+      properties:
+        trip_id:
+          type: string
+          format: uuid
+        seats:
+          type: integer
+          minimum: 1
+
+    Payment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        booking_id:
+          type: string
+          format: uuid
+        amount_usd:
+          type: number
+          format: float
+        amount_bs:
+          type: number
+          format: float
+          nullable: true
+        commission_usd:
+          type: number
+          format: float
+          description: 15% del monto
+        driver_amount_usd:
+          type: number
+          format: float
+          description: Monto neto al conductor
+        method:
+          type: string
+          enum: [transfer_usd, zelle, pago_movil, cash]
+        status:
+          type: string
+          enum: [pending, confirmed, disputed, refunded]
+        reference:
+          type: string
+          description: Número de referencia de la transferencia
+        created_at:
+          type: string
+          format: date-time
+        confirmed_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    PaymentCreate:
+      type: object
+      required: [booking_id, method, amount_usd]
+      properties:
+        booking_id:
+          type: string
+          format: uuid
+        method:
+          type: string
+          enum: [transfer_usd, zelle, pago_movil, cash]
+        amount_usd:
+          type: number
+          format: float
+        amount_bs:
+          type: number
+          format: float
+          nullable: true
+        reference:
+          type: string
+
+    Review:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        trip_id:
+          type: string
+          format: uuid
+        from_user_id:
+          type: string
+          format: uuid
+        to_user_id:
+          type: string
+          format: uuid
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        comment:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    ReviewCreate:
+      type: object
+      required: [trip_id, to_user_id, rating]
+      properties:
+        trip_id:
+          type: string
+          format: uuid
+        to_user_id:
+          type: string
+          format: uuid
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        comment:
+          type: string
+
+    Incident:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        trip_id:
+          type: string
+          format: uuid
+        reporter_id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [panic, late_cancel, wrong_vehicle, accident, payment_fraud, conflict, other]
+        description:
+          type: string
+        status:
+          type: string
+          enum: [open, investigating, resolved]
+        location:
+          $ref: '#/components/schemas/GeoPoint'
+        created_at:
+          type: string
+          format: date-time
+        resolved_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    IncidentCreate:
+      type: object
+      required: [trip_id, type]
+      properties:
+        trip_id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [late_cancel, wrong_vehicle, accident, payment_fraud, conflict, other]
+        description:
+          type: string
+        lat:
+          type: number
+        lng:
+          type: number
+
+    Conversation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        trip_id:
+          type: string
+          format: uuid
+        driver_id:
+          type: string
+          format: uuid
+        passenger_id:
+          type: string
+          format: uuid
+        driver_name:
+          type: string
+        passenger_name:
+          type: string
+        last_message:
+          type: string
+        last_message_at:
+          type: string
+          format: date-time
+        unread_count:
+          type: integer
+
+    ChatMessage:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        conversation_id:
+          type: string
+          format: uuid
+        sender_id:
+          type: string
+          format: uuid
+        content:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    GeoPoint:
+      type: object
+      properties:
+        lat:
+          type: number
+          format: float
+        lng:
+          type: number
+          format: float
