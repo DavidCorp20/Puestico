@@ -84,8 +84,8 @@ export default async function MisViajes({
       {bookings.length === 0 && (
         <div className="empty">
           <span className="empty-icon">🎫</span>
-          <strong>Todavía no tienes reservas</strong>
-          Cuando reserves un puesto, va a aparecer acá con su estado.
+          <strong>Aquí van a aparecer tus viajes</strong>
+          Reserva el primero y lo sigues desde acá.
           <a className="btn" href="/" style={{ marginTop: 14 }}>
             Buscar un viaje
           </a>
@@ -135,8 +135,8 @@ export default async function MisViajes({
             {b.status === 'confirmed' && status === 'scheduled' && (
               <>
                 <p className="note note-ok">
-                  Tu puesto está confirmado. Te avisamos cuando el conductor
-                  arranque.
+                  Viaje confirmado. {trip.driver.name.split(' ')[0]} te recoge
+                  en {trip.origin} a las {trip.departure_time}.
                 </p>
                 <a
                   className="btn btn-ghost btn-sm"
@@ -231,7 +231,7 @@ export default async function MisViajes({
               </p>
             )}
             {b.status === 'cancelled' && (
-              <p className="note">Cancelaste esta reserva.</p>
+              <p className="note">Cancelaste este puesto. Queda libre para otro pasajero.</p>
             )}
           </div>
         );

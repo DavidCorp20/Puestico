@@ -1,25 +1,43 @@
 :root {
-  --bg: #0b0f14;
-  --bg-glow: #101822;
-  --surface: #151c25;
-  --surface-2: #1d2530;
-  --surface-3: #253040;
-  --border: #253040;
-  --border-soft: #1d2530;
-  --text: #eef2f6;
-  --muted: #8e9bab;
-  --muted-2: #6b7787;
-  --accent: #22c55e;
-  --accent-2: #0d9488;
-  --accent-hover: #16a34a;
-  --accent-soft: rgba(34, 197, 94, 0.11);
-  --warn: #fbbf24;
-  --warn-soft: rgba(251, 191, 36, 0.12);
-  --danger: #f87171;
-  --danger-soft: rgba(248, 113, 113, 0.12);
-  --radius: 14px;
-  --radius-sm: 10px;
-  --shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+  /* ─── Tokens de marca (Designer) ─────────────────────
+     Un solo acento verde. El verde se parte en DOS USOS del
+     mismo color porque blanco sobre #16A34A da 3,3:1 y no pasa
+     accesibilidad: relleno de botón vs. texto/iconos.        */
+  --bg:            #0F1419;
+  --bg-glow:       #141C24;
+  --surface:       #1A2028;
+  --surface-2:     #222B35;
+  --surface-3:     #2C3743;
+  --border:        #2C3743;
+  --border-strong: #3B4854;
+  --border-soft:   #222B35;
+
+  --accent:        #16A34A;  /* relleno de botón primario */
+  --accent-hover:  #12B854;
+  --accent-text:   #22C55E;  /* verde sobre fondo oscuro: 8,12:1 */
+  --accent-2:      #0F9E4A;
+  --accent-soft:   rgba(34, 197, 94, 0.12);
+  --on-accent:     #0F1419;  /* texto SOBRE el botón verde: 5,62:1 */
+
+  --text:          #F2F5F7;  /* 16,91:1 */
+  --muted:         #A7B3BF;  /* 8,68:1 — etiquetas, metadatos */
+  --muted-2:       #7C8A97;  /* 5,24:1 — solo texto grande o deshabilitado */
+
+  --warn:          #F5B841;
+  --warn-soft:     rgba(245, 184, 65, 0.12);
+  --danger:        #F26D6D;
+  --danger-soft:   rgba(242, 109, 109, 0.12);
+  --info:          #6BA8F5;
+
+  --radius:        16px;
+  --radius-sm:     12px;
+  --radius-xs:     8px;
+  --shadow:        0 1px 2px rgba(0,0,0,.30), 0 8px 24px rgba(0,0,0,.22);
+  --shadow-float:  0 12px 32px rgba(0,0,0,.38);
+  --ring:          0 0 0 3px rgba(34, 197, 94, 0.35);
+
+  --star: #F5B841;
+  --star-off: rgba(124, 138, 151, 0.3);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -183,8 +201,8 @@ h2 {
 }
 
 .mode-tab.active {
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  color: #fff;
+  background: linear-gradient(135deg, var(--accent-hover), var(--accent));
+  color: var(--on-accent);
   font-weight: 650;
   box-shadow: 0 2px 10px rgba(34, 197, 94, 0.25);
 }
@@ -239,7 +257,7 @@ select:focus, input:focus {
 .swap-btn {
   background: var(--surface-2);
   border: 1px solid var(--border);
-  color: var(--accent);
+  color: var(--accent-text);
   border-radius: 999px;
   width: 36px;
   height: 36px;
@@ -250,14 +268,14 @@ select:focus, input:focus {
 }
 .swap-btn:hover {
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   transform: rotate(180deg);
 }
 
 /* ─── Botones ──────────────────────────────────────── */
 .btn {
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  color: #fff;
+  background: linear-gradient(135deg, var(--accent-hover), var(--accent));
+  color: var(--on-accent);
   border: none;
   border-radius: var(--radius-sm);
   padding: 13px 18px;
@@ -313,7 +331,7 @@ select:focus, input:focus {
   white-space: nowrap;
   transition: all 0.15s;
 }
-.btn-mini:hover { border-color: var(--accent); color: var(--accent); }
+.btn-mini:hover { border-color: var(--accent); color: var(--accent-text); }
 
 .btn-row {
   display: grid;
@@ -363,7 +381,7 @@ select:focus, input:focus {
 .chip-on {
   background: var(--accent-soft);
   border-color: var(--accent);
-  color: var(--accent);
+  color: var(--accent-text);
   font-weight: 600;
 }
 
@@ -426,7 +444,7 @@ select:focus, input:focus {
 .trip-price {
   font-size: 1.42rem;
   font-weight: 700;
-  color: var(--accent);
+  color: var(--accent-text);
   white-space: nowrap;
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
@@ -481,7 +499,7 @@ select:focus, input:focus {
   font-size: 0.77rem;
   font-weight: 600;
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-text);
   border-radius: 999px;
   padding: 5px 11px;
   white-space: nowrap;
@@ -489,8 +507,8 @@ select:focus, input:focus {
 
 .tag-best {
   font-size: 0.63rem;
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  color: #fff;
+  background: linear-gradient(135deg, var(--accent-hover), var(--accent));
+  color: var(--on-accent);
   border-radius: 999px;
   padding: 2px 8px;
   font-weight: 700;
@@ -530,7 +548,7 @@ select:focus, input:focus {
   margin-top: 3px;
 }
 .row-total span:first-child { color: var(--text); }
-.row-total span:last-child { color: var(--accent); font-weight: 700; }
+.row-total span:last-child { color: var(--accent-text); font-weight: 700; }
 
 /* ─── Estados ──────────────────────────────────────── */
 .empty {
@@ -564,7 +582,7 @@ select:focus, input:focus {
   margin-bottom: 15px;
   transition: color 0.15s;
 }
-.back-link:hover { color: var(--accent); }
+.back-link:hover { color: var(--accent-text); }
 
 .note {
   background: var(--accent-soft);
@@ -659,7 +677,7 @@ select:focus, input:focus {
 .map-status strong {
   display: block;
   font-size: 1.06rem;
-  color: var(--accent);
+  color: var(--accent-text);
   font-variant-numeric: tabular-nums;
 }
 .map-status small {
@@ -709,7 +727,7 @@ select:focus, input:focus {
 .stat strong {
   display: block;
   font-size: 1.35rem;
-  color: var(--accent);
+  color: var(--accent-text);
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
 }
@@ -737,7 +755,7 @@ select:focus, input:focus {
 }
 .status-active, .status-confirmed {
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .status-completed {
   background: rgba(142, 155, 171, 0.13);
@@ -817,7 +835,7 @@ select:focus, input:focus {
   margin-left: 7px;
   border-radius: 999px;
   background: var(--accent);
-  color: #04140a;
+  color: var(--on-accent);
   font-size: 0.68rem;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
@@ -901,10 +919,10 @@ select:focus, input:focus {
   border-color: rgba(34, 197, 94, 0.3);
   color: #bfe9cd;
 }
-.alert-ok strong { color: var(--accent); }
+.alert-ok strong { color: var(--accent-text); }
 
 .note-ok {
-  color: var(--accent);
+  color: var(--accent-text);
   background: var(--accent-soft);
   border-radius: 8px;
   padding: 9px 12px;
@@ -933,8 +951,8 @@ select:focus, input:focus {
   width: 13px;
   height: 13px;
   margin-right: 8px;
-  border: 2px solid rgba(255, 255, 255, 0.32);
-  border-top-color: #fff;
+  border: 2px solid rgba(15, 20, 25, 0.28);
+  border-top-color: var(--on-accent);
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
   vertical-align: -2px;
@@ -985,14 +1003,14 @@ select:focus, input:focus {
 }
 .seats-tag.accent {
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .verified-tag {
   margin-left: auto;
   font-size: 0.71rem;
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-text);
   border-radius: 999px;
   padding: 5px 10px;
   white-space: nowrap;
@@ -1135,7 +1153,7 @@ select:focus, input:focus {
   margin-top: 13px;
   padding: 11px 13px;
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-text);
   border-radius: var(--radius-sm);
   font-size: 0.87rem;
   font-weight: 650;
@@ -1268,8 +1286,8 @@ select:focus, input:focus {
   color: var(--text);
   cursor: default;
 }
-.kyc-item.done > span { background: var(--accent); color: #04140a; }
-.kyc-item.done em { color: var(--accent); }
+.kyc-item.done > span { background: var(--accent); color: var(--on-accent); }
+.kyc-item.done em { color: var(--accent-text); }
 
 li.kyc-item.done { display: flex; }
 
@@ -1352,4 +1370,697 @@ li.kyc-item.done { display: flex; }
 /* Evita el zoom automático de iOS al enfocar un campo */
 @media (max-width: 560px) {
   input, select, textarea { font-size: 16px; }
+}
+
+/* ═══════════════════════════════════════════════════════
+   Tarifa regulada por distancia, foco accesible y portada.
+   ═══════════════════════════════════════════════════════ */
+
+/* ─── Foco visible: no existía y es requisito ──────── */
+a:focus-visible,
+button:focus-visible,
+select:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+  border-radius: var(--radius-xs);
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  background: var(--surface);
+  color: var(--text);
+  padding: 11px 16px;
+  border-radius: 0 0 var(--radius-xs) 0;
+  z-index: 100;
+  text-decoration: none;
+  font-size: 0.88rem;
+}
+.skip-link:focus {
+  left: 0;
+  box-shadow: var(--ring);
+}
+
+/* Cifras de ancho fijo: las columnas no bailan */
+.trip-price,
+.trip-time,
+.row span:last-child,
+.seats-tag,
+.stat strong,
+.fact strong,
+.fare-panel-price,
+.earn-monthly strong {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Etiquetas de campo, según la hoja de Designer */
+.field label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--muted);
+  font-weight: 650;
+}
+
+/* ─── Sello de tarifa en las tarjetas ──────────────── */
+.fare-badge-wrap {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+  margin-top: 9px;
+}
+
+.fare-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.71rem;
+  font-weight: 650;
+  border-radius: var(--radius-pill, 999px);
+  padding: 4px 10px;
+  white-space: nowrap;
+}
+
+.fare-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+.fare-best,
+.fare-good {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+.fare-fair {
+  background: rgba(107, 168, 245, 0.12);
+  color: var(--info);
+}
+.fare-high {
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+
+.fare-savings {
+  font-size: 0.75rem;
+  color: var(--accent-text);
+  font-weight: 600;
+}
+
+/* ─── Desglose de la tarifa (pasajero) ─────────────── */
+.fare-intro {
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+
+.fare-band { margin-top: 16px; }
+
+.fare-band-track {
+  position: relative;
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    var(--accent) 0%,
+    var(--info) 50%,
+    var(--warn) 100%
+  );
+  opacity: 0.55;
+}
+
+.fare-band-marker {
+  position: absolute;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--text);
+  border: 3px solid var(--bg);
+  transform: translate(-50%, -50%);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+.fare-band-ends {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  font-size: 0.72rem;
+  color: var(--muted-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.fare-band-note {
+  margin-top: 8px;
+  font-size: 0.76rem;
+  color: var(--muted-2);
+  line-height: 1.45;
+}
+
+/* Comparación contra un taxi */
+.fare-compare {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 13px;
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+  flex-wrap: wrap;
+}
+.fare-compare > div { display: flex; flex-direction: column; }
+.fare-compare strong {
+  font-size: 1.15rem;
+  font-variant-numeric: tabular-nums;
+  text-decoration: line-through;
+  text-decoration-color: var(--danger);
+  color: var(--muted);
+}
+.fare-compare strong.accent {
+  color: var(--accent-text);
+  text-decoration: none;
+}
+.fare-compare small { color: var(--muted-2); font-size: 0.71rem; }
+.fare-compare-arrow { color: var(--muted-2); font-size: 1.1rem; }
+.fare-compare-save {
+  margin-left: auto;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font-weight: 800;
+  font-size: 0.92rem;
+  border-radius: 999px;
+  padding: 6px 12px;
+}
+
+/* ─── Panel de tarifa del conductor ────────────────── */
+.fare-panel {
+  margin-top: 16px;
+  padding: 15px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.fare-panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.fare-panel-label {
+  display: block;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted-2);
+  margin-bottom: 3px;
+}
+
+.fare-panel-price {
+  font-size: 1.7rem;
+  font-weight: 700;
+  color: var(--accent-text);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+.fare-panel-price small {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 400;
+  color: var(--muted-2);
+  letter-spacing: 0;
+}
+
+.fare-panel-facts {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+.fare-panel-facts span {
+  background: var(--surface-3);
+  color: var(--muted);
+  font-size: 0.73rem;
+  border-radius: 999px;
+  padding: 4px 10px;
+  white-space: nowrap;
+}
+.fare-panel-facts .peak {
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+
+.fare-slider label {
+  display: block;
+  font-size: 0.83rem;
+  color: var(--muted);
+  margin-bottom: 9px;
+}
+.fare-slider label strong {
+  color: var(--text);
+  font-size: 1.02rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.fare-slider input[type='range'] {
+  width: 100%;
+  accent-color: var(--accent);
+  cursor: pointer;
+  height: 22px;
+}
+
+.fare-slider-ends {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.71rem;
+  color: var(--muted-2);
+  font-variant-numeric: tabular-nums;
+}
+.fare-slider-ends .mid { color: var(--accent-text); }
+
+.fare-verdict {
+  margin-top: 11px;
+  font-size: 0.81rem;
+  line-height: 1.45;
+  padding: 9px 11px;
+  border-radius: var(--radius-xs);
+}
+.fare-verdict.ok { background: var(--accent-soft); color: #BFE9CD; }
+.fare-verdict.bad { background: var(--warn-soft); color: #F6DFA4; }
+
+/* ─── Panel de ingreso del conductor ───────────────── */
+.earn-panel {
+  margin-top: 14px;
+  padding: 15px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.earn-head {
+  font-weight: 700;
+  font-size: 0.92rem;
+  margin-bottom: 10px;
+}
+
+.earn-monthly {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+  padding: 13px;
+  background: var(--accent-soft);
+  border-radius: var(--radius-xs);
+}
+.earn-monthly strong {
+  font-size: 1.6rem;
+  color: var(--accent-text);
+  letter-spacing: -0.02em;
+  line-height: 1;
+  white-space: nowrap;
+}
+.earn-monthly span {
+  font-size: 0.79rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+@media (max-width: 560px) {
+  .fare-panel-price { font-size: 1.45rem; }
+  .fare-compare { gap: 9px; }
+  .fare-compare strong { font-size: 1rem; }
+  .fare-compare-save { margin-left: 0; width: 100%; text-align: center; }
+  .earn-monthly { flex-direction: column; align-items: flex-start; gap: 5px; }
+  .earn-monthly strong { font-size: 1.4rem; }
+}
+
+.accent-text { color: var(--accent-text); }
+
+.fare-compare.standalone {
+  border: 1px solid var(--border);
+  margin: 14px 0;
+}
+
+/* ═══════════════════════════════════════════════════════
+   Portada de inversores y pantalla de métricas.
+   ═══════════════════════════════════════════════════════ */
+
+.landing { max-width: 100%; }
+
+.hero {
+  text-align: center;
+  padding: 22px 0 30px;
+}
+
+.hero-title {
+  font-size: 2.5rem;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  margin: 18px 0 12px;
+  font-weight: 800;
+}
+
+.hero-sub {
+  color: var(--muted);
+  font-size: 1.06rem;
+  line-height: 1.55;
+  max-width: 30rem;
+  margin: 0 auto 24px;
+}
+
+.hero-cta {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+  max-width: 26rem;
+  margin: 0 auto;
+}
+.hero-cta .btn { flex: 1; min-width: 11rem; }
+
+/* Los tres números grandes */
+.big-numbers {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin: 8px 0 34px;
+}
+.big-numbers > div {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 14px;
+  text-align: center;
+}
+.big-numbers strong {
+  display: block;
+  font-size: 1.85rem;
+  color: var(--accent-text);
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 6px;
+}
+.big-numbers span {
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.4;
+  display: block;
+}
+
+.landing-block { margin-bottom: 34px; }
+.landing-block h2 {
+  font-size: 1.35rem;
+  letter-spacing: -0.02em;
+  margin-bottom: 12px;
+}
+.landing-block p {
+  color: var(--muted);
+  line-height: 1.65;
+  margin-bottom: 12px;
+  font-size: 0.95rem;
+}
+.landing-block p strong { color: var(--text); }
+
+/* Cómo funciona */
+.how-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+.how-step {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+}
+.how-num {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font-weight: 800;
+  font-size: 0.82rem;
+  margin-bottom: 9px;
+}
+.how-step strong { display: block; margin-bottom: 5px; font-size: 0.95rem; }
+.how-step p {
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Ejemplo de tarifa en la portada */
+.example-fare {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 17px;
+}
+.example-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 11px;
+  padding-bottom: 11px;
+  border-bottom: 1px solid var(--border-soft);
+}
+.example-head strong { font-size: 1.05rem; }
+.example-head span { color: var(--muted-2); font-size: 0.78rem; }
+
+.closing-line {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  color: var(--text);
+  padding: 17px;
+  background: var(--accent-soft);
+  border-radius: var(--radius);
+  border-left: 3px solid var(--accent);
+}
+
+/* ─── KPI de métricas ──────────────────────────────── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.kpi {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 17px 15px;
+}
+.kpi-lead {
+  grid-column: 1 / -1;
+  border-color: rgba(34, 197, 94, 0.32);
+  background: linear-gradient(160deg, rgba(34, 197, 94, 0.08), var(--surface));
+}
+
+.kpi-label {
+  display: block;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--muted-2);
+  margin-bottom: 5px;
+}
+.kpi strong {
+  display: block;
+  font-size: 1.65rem;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+.kpi-lead strong { font-size: 2.4rem; color: var(--accent-text); }
+.kpi small {
+  display: block;
+  color: var(--muted);
+  font-size: 0.78rem;
+  margin-top: 3px;
+}
+
+.growth-strip {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 18px;
+  padding: 14px;
+  background: var(--surface-2);
+  border-radius: var(--radius);
+}
+.growth-strip > div { text-align: center; }
+.growth-strip strong {
+  display: block;
+  font-size: 1.25rem;
+  color: var(--accent-text);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+.growth-strip span {
+  color: var(--muted-2);
+  font-size: 0.72rem;
+  line-height: 1.35;
+  display: block;
+}
+
+/* ─── Gráfico ──────────────────────────────────────── */
+.chart-wrap { margin-top: 6px; }
+.chart-svg { width: 100%; height: auto; display: block; }
+
+.chart-legend {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 8px;
+  font-size: 0.76rem;
+  color: var(--muted);
+  flex-wrap: wrap;
+}
+.chart-legend span { display: flex; align-items: center; gap: 6px; }
+.chart-legend span::before {
+  content: '';
+  width: 11px;
+  height: 11px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.legend-bar::before { background: var(--accent-text); }
+.legend-line::before { background: var(--warn); border-radius: 50% !important; }
+
+.chart-value {
+  fill: var(--muted);
+  font-size: 11px;
+  font-weight: 650;
+  font-family: inherit;
+}
+.chart-label {
+  fill: var(--muted-2);
+  font-size: 12px;
+  font-family: inherit;
+}
+
+/* ─── Los dos lados ───────────────────────────────── */
+.two-col {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.side-card { display: flex; flex-direction: column; }
+
+.side-tag {
+  align-self: flex-start;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font-size: 0.69rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-radius: 999px;
+  padding: 4px 10px;
+  margin-bottom: 10px;
+}
+
+.side-number {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--accent-text);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.05;
+  margin-bottom: 8px;
+}
+
+.side-text {
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.55;
+  margin-bottom: 12px;
+  flex: 1;
+}
+
+.muted-strike {
+  color: var(--muted-2);
+  text-decoration: line-through;
+  text-decoration-color: var(--danger);
+}
+
+/* ─── Móvil ────────────────────────────────────────── */
+@media (max-width: 700px) {
+  .how-grid { grid-template-columns: 1fr; }
+  .two-col { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 560px) {
+  .hero-title { font-size: 1.95rem; }
+  .hero-sub { font-size: 0.97rem; }
+  .hero-cta { flex-direction: column; }
+  .hero-cta .btn { width: 100%; }
+
+  .big-numbers { grid-template-columns: 1fr; gap: 9px; }
+  .big-numbers > div {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    text-align: left;
+    padding: 14px 16px;
+  }
+  .big-numbers strong { font-size: 1.5rem; margin-bottom: 0; white-space: nowrap; }
+
+  .kpi-grid { grid-template-columns: 1fr; }
+  .kpi-lead strong { font-size: 2rem; }
+  .kpi strong { font-size: 1.45rem; }
+
+  .growth-strip { grid-template-columns: 1fr; gap: 12px; }
+  .growth-strip > div {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    text-align: left;
+  }
+  .growth-strip strong { white-space: nowrap; }
+
+  .closing-line { font-size: 1rem; padding: 14px; }
+  .landing-block h2 { font-size: 1.2rem; }
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.header-link {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 0.82rem;
+  padding: 7px 10px;
+  border-radius: var(--radius-xs);
+  white-space: nowrap;
+  transition: color 0.15s, background 0.15s;
+}
+.header-link:hover { color: var(--text); background: var(--surface-2); }
+
+@media (max-width: 560px) {
+  .header { padding: 11px 13px; }
+  .header-right { gap: 2px; }
+  .header-link { font-size: 0.75rem; padding: 6px 7px; }
+  .badge-demo { display: none; }
 }

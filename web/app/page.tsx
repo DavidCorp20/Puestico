@@ -71,8 +71,8 @@ export default async function Home({
 
       <h1>¿Para dónde vas?</h1>
       <p className="subtitle">
-        Viaja con alguien que ya va hacia tu destino. Pagas el puesto, no el
-        carro entero.
+        Reserva tu puesto en un carro que ya sale hacia tu destino. Pagas
+        menos, llegas igual.
       </p>
 
       <SearchForm origin={origin} destination={destination} date={date} sort={sort} />

@@ -34,7 +34,7 @@ export default function SearchForm({
   return (
     <form className="card search-form" method="get">
       <div className="field">
-        <label htmlFor="origin">Desde</label>
+        <label htmlFor="origin">¿De dónde sales?</label>
         <select id="origin" name="origin" value={o} onChange={(e) => setO(e.target.value)}>
           {options}
         </select>
@@ -48,14 +48,14 @@ export default function SearchForm({
       </div>
 
       <div className="field">
-        <label htmlFor="destination">Hasta</label>
+        <label htmlFor="destination">¿Para dónde vas?</label>
         <select id="destination" name="destination" value={d} onChange={(e) => setD(e.target.value)}>
           {options}
         </select>
       </div>
 
       <div className="field">
-        <label htmlFor="date">Fecha</label>
+        <label htmlFor="date">¿Cuándo?</label>
         <input id="date" name="date" type="date" defaultValue={date} />
       </div>
 
@@ -69,7 +69,7 @@ export default function SearchForm({
       </div>
 
       <div className="field full">
-        <button className="btn" type="submit">Buscar viajes</button>
+        <button className="btn" type="submit">Buscar puesto</button>
       </div>
     </form>
   );

@@ -1,4 +1,5 @@
-import { priceBreakdown, TEST_USERS } from '../../../lib/data';
+import { TEST_USERS } from '../../../lib/data';
+import { quote, computeFare, passengerSavings } from '../../../lib/fare';
 import { findTrip, freeSeats, ratingFor } from '../../../lib/store';
 import PayButton from './PayButton';
 import Avatar from '../../Avatar';
@@ -31,7 +32,10 @@ export default async function Reserva({
     );
   }
 
-  const { total, commission, driverAmount } = priceBreakdown(trip.price_usd, seats);
+  const q = quote(trip.price_usd, seats);
+  const { total, commission, driverAmount } = q;
+  const fare = computeFare(trip.origin, trip.destination, trip.departure_time);
+  const savings = passengerSavings(q.effective_per_seat, fare);
 
   // ─── Pantalla de confirmación ───────────────────────────
   if (sp.paid === '1') {
@@ -39,10 +43,11 @@ export default async function Reserva({
       <>
         <div className="card" style={{ textAlign: 'center' }}>
           <span className="success-icon">✅</span>
-          <h1>¡Reserva confirmada!</h1>
+          <h1>¡Puesto reservado!</h1>
           <p className="subtitle" style={{ marginBottom: 0 }}>
-            Le llegó tu solicitud a {trip.driver.name.split(' ')[0]}. Te
-            avisamos en cuanto la acepte.
+            Te esperan a las {trip.departure_time} en {trip.origin}. Le llegó
+            tu solicitud a {trip.driver.name.split(' ')[0]} — te avisamos en
+            cuanto la acepte.
           </p>
         </div>
 
@@ -161,11 +166,46 @@ export default async function Reserva({
           <span>Puestos</span>
           <span>{seats} × ${trip.price_usd.toFixed(2)}</span>
         </div>
+        {q.discount > 0 && (
+          <>
+            <div className="row">
+              <span>Subtotal</span>
+              <span>${q.gross.toFixed(2)}</span>
+            </div>
+            <div className="row">
+              <span className="accent-text">
+                Descuento por {seats} puestos ({Math.round(q.discount_rate * 100)}%)
+              </span>
+              <span className="accent-text">−${q.discount.toFixed(2)}</span>
+            </div>
+          </>
+        )}
         <div className="row row-total">
           <span>Total a pagar</span>
           <span>${total.toFixed(2)}</span>
         </div>
+        {q.discount > 0 && (
+          <p className="note note-ok">
+            Te sale a ${q.effective_per_seat.toFixed(2)} el puesto: mientras más
+            puestos reservas, más barato queda cada uno.
+          </p>
+        )}
       </div>
+
+      {savings.saved > 0 && (
+        <div className="fare-compare standalone">
+          <div>
+            <strong>${(savings.taxi * seats).toFixed(2)}</strong>
+            <small>{seats === 1 ? 'un taxi' : `${seats} taxis`} por esta ruta</small>
+          </div>
+          <div className="fare-compare-arrow">→</div>
+          <div>
+            <strong className="accent">${total.toFixed(2)}</strong>
+            <small>{seats === 1 ? 'tu puesto' : 'tus puestos'} en Puestico</small>
+          </div>
+          <div className="fare-compare-save">−{savings.percent}%</div>
+        </div>
+      )}
 
       <div className="card">
         <h2>Cómo se reparte</h2>
@@ -177,6 +217,10 @@ export default async function Reserva({
           <span>Comisión Puestico (15%)</span>
           <span>${commission.toFixed(2)}</span>
         </div>
+        <p className="note">
+          Puestico cobra 15%. Las apps de viaje privado en Venezuela cobran
+          entre 20% y 25%, así que al conductor le queda más por el mismo viaje.
+        </p>
       </div>
 
       <PayButton

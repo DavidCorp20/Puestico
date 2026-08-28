@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Puestico">
+  <title>Puestico</title>
+  <defs>
+    <linearGradient id="pGreenDark" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#22C55E"/>
+      <stop offset="1" stop-color="#0F9E4A"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="17" fill="url(#pGreenDark)"/>
+  <g fill="#0F1419">
+    <rect x="15" y="15" width="15" height="15" rx="5"/>
+    <rect x="34" y="15" width="15" height="15" rx="5"/>
+    <rect x="15" y="34" width="15" height="15" rx="5"/>
+  </g>
+  <rect x="36.7" y="36.7" width="15" height="15" rx="5" fill="none" stroke="#0F1419" stroke-width="3.6"/>
+</svg>

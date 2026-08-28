@@ -69,7 +69,7 @@ export default function RatingForm({
   return (
     <div className="rating-box">
       <div className="rating-title">
-        ¿Cómo te fue con {targetName.split(' ')[0]}?
+        Llegaste. ¿Cómo te trató {targetName.split(' ')[0]}?
       </div>
 
       <div
@@ -105,7 +105,7 @@ export default function RatingForm({
       />
 
       <button className="btn" onClick={submit} disabled={busy}>
-        {busy ? 'Enviando…' : 'Enviar calificación'}
+        {busy ? 'Enviando…' : 'Calificar el viaje'}
       </button>
       {error && <p className="error-text">{error}</p>}
     </div>

@@ -56,7 +56,7 @@ export default function PayButton({
             <span className="spinner" /> Procesando el pago…
           </>
         ) : (
-          'Confirmar pago'
+          'Pagar y confirmar'
         )}
       </button>
 

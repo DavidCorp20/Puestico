@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { priceBreakdown, passengerById, TEST_USERS } from '../../../lib/data';
+import { passengerById, TEST_USERS } from '../../../lib/data';
+import { quote } from '../../../lib/fare';
 import {
   store,
   findTrip,
@@ -64,10 +65,8 @@ export async function POST(request: Request) {
   }
 
   const passenger = passengerById(passenger_id) || TEST_USERS[0];
-  const { total, commission, driverAmount } = priceBreakdown(
-    trip.price_usd,
-    requested,
-  );
+  // quote() aplica el descuento por puesto adicional y la comisión
+  const { total, commission, driverAmount } = quote(trip.price_usd, requested);
 
   const booking = {
     id: nextId('b'),

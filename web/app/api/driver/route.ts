@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getBooking, findTrip, setTripStatus, bookingsForTrip, store, nextId } from '../../../lib/store';
 import { driverById, priceBreakdown } from '../../../lib/data';
+import { computeFare, validatePrice } from '../../../lib/fare';
 
 /**
  * Acciones del conductor sobre reservas y viajes.
@@ -33,6 +34,27 @@ export async function POST(request: Request) {
     }
     if (!(seatsNum >= 1 && seatsNum <= 6)) {
       return NextResponse.json({ error: 'Los puestos deben estar entre 1 y 6' }, { status: 400 });
+    }
+
+    // Tarifa regulada: el precio tiene que caer dentro de la banda que
+    // Puestico calcula para esa distancia. Igual que Yummy o Ridery, la
+    // plataforma fija el rango — el conductor elige dentro de él.
+    const fare = computeFare(origin, destination, time);
+    const check = validatePrice(priceNum, fare);
+    if (!check.ok) {
+      return NextResponse.json(
+        {
+          error: check.reason,
+          level: check.level,
+          fare: {
+            suggested: fare.suggested,
+            floor: fare.floor,
+            ceiling: fare.ceiling,
+            km: fare.km,
+          },
+        },
+        { status: 422 },
+      );
     }
 
     const vehicles: Record<string, any> = {

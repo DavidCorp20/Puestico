@@ -40,7 +40,7 @@ export default function DriverActions({
           {busy === 'accept' ? (
             <><span className="spinner" /> Aceptando…</>
           ) : (
-            'Aceptar el pasajero'
+            'Aceptar el puesto'
           )}
         </button>
         <button

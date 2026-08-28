@@ -2,6 +2,7 @@ import type { Trip } from '../lib/data';
 import { freeSeats, ratingFor } from '../lib/store';
 import Avatar from './Avatar';
 import Stars from './Stars';
+import FareBadge from './FareBadge';
 
 function fmtDuration(min: number): string {
   if (min < 60) return `${min} min`;
@@ -34,11 +35,9 @@ export default function TripList({
     return (
       <div className="empty">
         <span className="empty-icon">🔍</span>
-        <strong>
-          No hay viajes de {origin} a {destination} para esa fecha
-        </strong>
-        Esta ruta todavía no tiene conductores publicando ese día. Puedes probar
-        otra fecha o alguna de las rutas sugeridas arriba.
+        <strong>Todavía nadie va para allá</strong>
+        Prueba con otra hora o cambia el punto de encuentro. Estas fechas sí
+        tienen carros saliendo:
         {otherDates.length > 0 && (
           <div className="chips-row" style={{ justifyContent: 'center', marginTop: 14 }}>
             {otherDates.map((d) => (
@@ -123,6 +122,14 @@ export default function TripList({
                 </span>
               )}
             </div>
+
+            <FareBadge
+              origin={trip.origin}
+              destination={trip.destination}
+              price={trip.price_usd}
+              time={trip.departure_time}
+              showSavings
+            />
           </>
         );
 
