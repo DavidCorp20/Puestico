@@ -1,6 +1,7 @@
 import { findTrip, tripStatus } from '../../../lib/store';
 import RouteMap from '../../RouteMap';
 import PanicButton from './PanicButton';
+import Avatar from '../../Avatar';
 
 export default async function Seguimiento({
   params,
@@ -51,9 +52,7 @@ export default async function Seguimiento({
       <div className="card">
         <h2>Tu conductor</h2>
         <div className="driver-row" style={{ borderTop: 'none', paddingTop: 0 }}>
-          <div className="avatar" style={{ width: 52, height: 52, fontSize: '1.6rem' }}>
-            {trip.driver.photo}
-          </div>
+          <Avatar name={trip.driver.name} size={54} />
           <div>
             <div className="driver-name" style={{ fontSize: '1.05rem' }}>
               {trip.driver.name}

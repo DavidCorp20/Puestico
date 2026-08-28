@@ -1,6 +1,7 @@
 import { TEST_USERS } from '../../../lib/data';
 import { findTrip } from '../../../lib/store';
 import RouteMap from '../../RouteMap';
+import Avatar from '../../Avatar';
 
 export default async function TripDetail({
   params,
@@ -38,9 +39,7 @@ export default async function TripDetail({
 
       <div className="card">
         <div className="driver-row" style={{ borderTop: 'none', paddingTop: 0 }}>
-          <div className="avatar" style={{ width: 52, height: 52, fontSize: '1.6rem' }}>
-            {trip.driver.photo}
-          </div>
+          <Avatar name={trip.driver.name} size={54} />
           <div>
             <div className="driver-name" style={{ fontSize: '1.05rem' }}>
               {trip.driver.name}

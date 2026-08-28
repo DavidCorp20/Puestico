@@ -1,6 +1,7 @@
 import { TEST_DRIVERS } from '../../lib/data';
 import { allTrips, bookingsForDriver, tripStatus } from '../../lib/store';
 import DriverActions from './DriverActions';
+import Avatar from '../Avatar';
 
 export default async function DriverHome({
   searchParams,
@@ -72,7 +73,7 @@ export default async function DriverHome({
             return (
               <div className="card" key={b.id}>
                 <div className="driver-row" style={{ borderTop: 'none', paddingTop: 0 }}>
-                  <div className="avatar">🧑</div>
+                  <Avatar name={b.passenger_name} />
                   <div>
                     <div className="driver-name">{b.passenger_name}</div>
                     <div className="driver-meta">

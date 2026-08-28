@@ -1,5 +1,6 @@
 import { TEST_USERS } from '../../lib/data';
 import { bookingsForPassenger, findTrip, tripStatus } from '../../lib/store';
+import Avatar from '../Avatar';
 
 const LABEL: Record<string, string> = {
   pending: 'Esperando al conductor',
@@ -72,7 +73,7 @@ export default async function MisViajes({
             </div>
 
             <div className="driver-row">
-              <div className="avatar">{trip.driver.photo}</div>
+              <Avatar name={trip.driver.name} />
               <div>
                 <div className="driver-name">{trip.driver.name}</div>
                 <div className="driver-meta">

@@ -1,6 +1,7 @@
 import { findTrip, bookingsForTrip, tripStatus } from '../../../../lib/store';
 import RouteMap from '../../../RouteMap';
 import TripControls from './TripControls';
+import Avatar from '../../../Avatar';
 
 export default async function DriverTrip({
   params,
@@ -80,7 +81,7 @@ export default async function DriverTrip({
       {active.map((b) => (
         <div className="card" key={b.id}>
           <div className="driver-row" style={{ borderTop: 'none', paddingTop: 0 }}>
-            <div className="avatar">🧑</div>
+            <Avatar name={b.passenger_name} />
             <div>
               <div className="driver-name">{b.passenger_name}</div>
               <div className="driver-meta">

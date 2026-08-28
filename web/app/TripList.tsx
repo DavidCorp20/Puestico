@@ -1,4 +1,5 @@
 import type { Trip } from '../lib/data';
+import Avatar from './Avatar';
 
 export default function TripList({
   trips,
@@ -47,7 +48,7 @@ export default function TripList({
           </div>
 
           <div className="driver-row">
-            <div className="avatar">{trip.driver.photo}</div>
+            <Avatar name={trip.driver.name} />
             <div>
               <div className="driver-name">
                 {trip.driver.name}
