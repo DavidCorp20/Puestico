@@ -1,4 +1,6 @@
-import { getTrip, TEST_USERS } from '../../../lib/data';
+import { TEST_USERS } from '../../../lib/data';
+import { findTrip } from '../../../lib/store';
+import RouteMap from '../../RouteMap';
 
 export default async function TripDetail({
   params,
@@ -6,7 +8,7 @@ export default async function TripDetail({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const trip = getTrip(id);
+  const trip = findTrip(id);
 
   if (!trip) {
     return (
@@ -29,6 +31,10 @@ export default async function TripDetail({
       <p className="subtitle">
         {trip.departure_date} · sale {trip.departure_time}
       </p>
+
+      <div className="card" style={{ padding: 12 }}>
+        <RouteMap origin={trip.origin} destination={trip.destination} />
+      </div>
 
       <div className="card">
         <div className="driver-row" style={{ borderTop: 'none', paddingTop: 0 }}>

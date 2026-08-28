@@ -1,4 +1,5 @@
-import { searchTrips, ORIGINS, DESTINATIONS } from '../lib/data';
+import { ORIGINS, DESTINATIONS } from '../lib/data';
+import { allTrips } from '../lib/store';
 import TripList from './TripList';
 
 export default async function Home({
@@ -11,10 +12,24 @@ export default async function Home({
   const destination = sp.destination || 'Caracas';
   const date = sp.date || '2026-09-01';
   const searched = Boolean(sp.origin);
-  const trips = searchTrips(origin, destination, date);
+  const trips = allTrips()
+    .filter(
+      (t) =>
+        t.origin === origin &&
+        t.destination === destination &&
+        t.departure_date === date &&
+        t.seats_available > 0,
+    )
+    .sort((a, b) => a.departure_time.localeCompare(b.departure_time));
 
   return (
     <>
+      <div className="mode-switch">
+        <span className="mode-tab active">Buscar</span>
+        <a href="/mis-viajes" className="mode-tab">Mis viajes</a>
+        <a href="/conductor" className="mode-tab">Soy conductor</a>
+      </div>
+
       <h1>¿A dónde vas?</h1>
       <p className="subtitle">
         Reservá un puesto en un viaje que ya sale hacia tu destino.

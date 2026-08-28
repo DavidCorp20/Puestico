@@ -175,3 +175,18 @@ export interface Booking {
 }
 
 export const BOOKINGS: Booking[] = [];
+
+/** Conductores de prueba para el modo conductor. */
+export const TEST_DRIVERS = [
+  { id: DRIVERS.d1.id, name: DRIVERS.d1.name, photo: DRIVERS.d1.photo },
+  { id: DRIVERS.d2.id, name: DRIVERS.d2.name, photo: DRIVERS.d2.photo },
+  { id: DRIVERS.d4.id, name: DRIVERS.d4.name, photo: DRIVERS.d4.photo },
+];
+
+export function driverById(id: string): Driver | undefined {
+  return Object.values(DRIVERS).find((d) => d.id === id);
+}
+
+export function passengerById(id: string) {
+  return TEST_USERS.find((u) => u.id === id);
+}

@@ -1,4 +1,5 @@
-import { getTrip, priceBreakdown, TEST_USERS } from '../../../lib/data';
+import { priceBreakdown, TEST_USERS } from '../../../lib/data';
+import { findTrip } from '../../../lib/store';
 import PayButton from './PayButton';
 
 export default async function Reserva({
@@ -10,7 +11,7 @@ export default async function Reserva({
 }) {
   const { id } = await params;
   const sp = await searchParams;
-  const trip = getTrip(id);
+  const trip = findTrip(id);
   const seats = Number(sp.seats || 1);
   const passenger =
     TEST_USERS.find((u) => u.id === sp.passenger) || TEST_USERS[0];
@@ -36,7 +37,8 @@ export default async function Reserva({
           <span className="success-icon">✅</span>
           <h1>¡Reserva confirmada!</h1>
           <p className="subtitle" style={{ marginBottom: 0 }}>
-            Tu puesto está guardado. Te esperamos.
+            Le llegó tu solicitud a {trip.driver.name.split(' ')[0]}. Te avisamos
+            apenas la acepte.
           </p>
         </div>
 
@@ -90,7 +92,12 @@ export default async function Reserva({
           </div>
         </div>
 
-        <a className="btn btn-ghost" href="/">Buscar otro viaje</a>
+        <div className="stack">
+          <a className="btn" href={`/mis-viajes?passenger=${passenger.id}`}>
+            Ver mis viajes
+          </a>
+          <a className="btn btn-ghost" href="/">Buscar otro viaje</a>
+        </div>
       </>
     );
   }

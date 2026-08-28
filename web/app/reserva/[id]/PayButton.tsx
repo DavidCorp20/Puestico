@@ -13,23 +13,31 @@ export default function PayButton({
 }) {
   const [loading, setLoading] = useState(false);
 
+  const [error, setError] = useState('');
+
   async function pay() {
     setLoading(true);
-    try {
-      await fetch('/api/bookings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ trip_id: tripId, passenger_id: passenger, seats }),
-      });
-    } catch {
-      // En el demo seguimos igual: lo importante es que el recorrido no se corte.
+    setError('');
+    const res = await fetch('/api/bookings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ trip_id: tripId, passenger_id: passenger, seats }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error || 'No se pudo reservar');
+      setLoading(false);
+      return;
     }
     window.location.href = `/reserva/${tripId}?passenger=${passenger}&seats=${seats}&paid=1`;
   }
 
   return (
-    <button className="btn" onClick={pay} disabled={loading}>
-      {loading ? 'Confirmando…' : 'Confirmar pago'}
-    </button>
+    <>
+      <button className="btn" onClick={pay} disabled={loading}>
+        {loading ? 'Confirmando…' : 'Confirmar pago'}
+      </button>
+      {error && <p className="error-text">{error}</p>}
+    </>
   );
 }
