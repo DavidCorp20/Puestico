@@ -8,6 +8,7 @@ import RouteMap from '../../../RouteMap';
 import TripControls from './TripControls';
 import Avatar from '../../../Avatar';
 import Stars from '../../../Stars';
+import TopBar from '../../../TopBar';
 
 export default async function DriverTrip({
   params,
@@ -22,13 +23,18 @@ export default async function DriverTrip({
 
   if (!trip) {
     return (
-      <div className="empty">
-        <span className="empty-icon">🤔</span>
-        <strong>No encontramos ese viaje</strong>
-        <a className="btn" href="/conductor" style={{ marginTop: 14 }}>
-          Volver a mis viajes
-        </a>
-      </div>
+      <>
+        <TopBar title="Viaje" back="/conductor" />
+        <main className="screen">
+          <div className="empty">
+            <span className="empty-icon">🤔</span>
+            <strong>No encontramos ese viaje</strong>
+            <a className="btn" href="/conductor" style={{ marginTop: 14 }}>
+              Volver a mis viajes
+            </a>
+          </div>
+        </main>
+      </>
     );
   }
 
@@ -43,10 +49,11 @@ export default async function DriverTrip({
 
   return (
     <>
-      <a className="back-link" href={`/conductor?driver=${sp.driver || ''}`}>
-        ← Volver a mis viajes
-      </a>
-
+      <TopBar
+        title={`${trip.origin} → ${trip.destination}`}
+        back={`/conductor?driver=${sp.driver || ''}`}
+      />
+      <main className="screen">
       <div className="trip-top">
         <div>
           <h1>{trip.origin} → {trip.destination}</h1>
@@ -123,6 +130,7 @@ export default async function DriverTrip({
           </div>
         </div>
       )}
+      </main>
     </>
   );
 }

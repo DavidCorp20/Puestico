@@ -3,6 +3,7 @@ import RouteMap from '../../RouteMap';
 import PanicButton from './PanicButton';
 import Avatar from '../../Avatar';
 import Stars from '../../Stars';
+import TopBar from '../../TopBar';
 
 export default async function Seguimiento({
   params,
@@ -14,14 +15,19 @@ export default async function Seguimiento({
 
   if (!trip) {
     return (
-      <div className="empty">
+      <>
+        <TopBar title="Seguimiento" back="/mis-viajes" />
+        <main className="screen">
+        <div className="empty">
         <span className="empty-icon">🤔</span>
         <strong>No encontramos ese viaje</strong>
         Puede que el conductor lo haya dado de baja.
         <a className="btn" href="/mis-viajes" style={{ marginTop: 14 }}>
           Volver a mis viajes
         </a>
-      </div>
+        </div>
+        </main>
+      </>
     );
   }
 
@@ -29,12 +35,14 @@ export default async function Seguimiento({
 
   return (
     <>
-      <a className="back-link" href="/mis-viajes">← Mis viajes</a>
-
-      <h1>Tu viaje en curso</h1>
-      <p className="subtitle">
-        {trip.origin} → {trip.destination} · salió {trip.departure_time}
-      </p>
+      <TopBar title="Viaje en curso" back="/mis-viajes" />
+      <main className="screen">
+      <div className="greet">
+        <h1 className="greet-title">Tu viaje en curso</h1>
+        <p className="greet-sub">
+          {trip.origin} → {trip.destination} · salió {trip.departure_time}
+        </p>
+      </div>
 
       <div className="card map-card">
         <RouteMap
@@ -76,6 +84,7 @@ export default async function Seguimiento({
       </div>
 
       <PanicButton tripId={trip.id} />
+      </main>
     </>
   );
 }

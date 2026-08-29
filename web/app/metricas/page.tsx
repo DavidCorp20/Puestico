@@ -1,6 +1,8 @@
 import { metrics } from '../../lib/metrics';
 import { FARE } from '../../lib/fare';
 import GrowthChart from './GrowthChart';
+import TopBar from '../TopBar';
+import BottomNav from '../BottomNav';
 
 export const metadata = {
   title: 'Puestico — Métricas del negocio',
@@ -18,12 +20,14 @@ export default function Metricas() {
 
   return (
     <>
-      <a className="back-link" href="/inicio">← Volver</a>
-
-      <h1>Métricas del negocio</h1>
-      <p className="subtitle">
-        Piloto en el corredor Guarenas–Guatire ↔ Caracas, últimos 6 meses.
-      </p>
+      <TopBar title="El negocio" back="/inicio" />
+      <main className="screen" id="contenido">
+      <div className="greet">
+        <h1 className="greet-title">Métricas del piloto</h1>
+        <p className="greet-sub">
+          Corredor Guarenas–Guatire ↔ Caracas, últimos 6 meses.
+        </p>
+      </div>
 
       <div className="alert alert-warn">
         <strong>Datos simulados del piloto</strong>
@@ -168,6 +172,8 @@ export default function Metricas() {
         <a className="btn" href="/">Probar la app</a>
         <a className="btn btn-ghost" href="/inicio">Ver la propuesta</a>
       </div>
+      </main>
+      <BottomNav current="metricas" />
     </>
   );
 }

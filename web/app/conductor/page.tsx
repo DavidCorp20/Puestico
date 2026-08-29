@@ -12,7 +12,8 @@ import DriverActions from './DriverActions';
 import Onboarding from './Onboarding';
 import Avatar from '../Avatar';
 import Stars from '../Stars';
-import Tabs from '../Tabs';
+import TopBar from '../TopBar';
+import BottomNav from '../BottomNav';
 import RatingForm from '../RatingForm';
 
 export default async function DriverHome({
@@ -43,8 +44,8 @@ export default async function DriverHome({
 
   return (
     <>
-      <Tabs current="conductor" driver={driver.id} />
-
+      <TopBar />
+      <main className="screen" id="contenido">
       <div className="hero-driver">
         <Avatar name={driver.name} size={52} />
         <div>
@@ -233,6 +234,8 @@ export default async function DriverHome({
           ))}
         </>
       )}
+      </main>
+      <BottomNav current="conductor" driver={driver.id} />
     </>
   );
 }

@@ -1,8 +1,10 @@
 import { allTrips, freeSeats } from '../lib/store';
 import { buildRoute, routeDistanceKm, routeDuration } from '../lib/route';
+import { computeFare } from '../lib/fare';
 import SearchForm from './SearchForm';
 import TripList from './TripList';
-import Tabs from './Tabs';
+import TopBar from './TopBar';
+import BottomNav from './BottomNav';
 
 export default async function Home({
   searchParams,
@@ -42,8 +44,8 @@ export default async function Home({
   const route = buildRoute(origin, destination);
   const km = routeDistanceKm(route);
   const minutes = routeDuration(route);
+  const fare = computeFare(origin, destination);
 
-  // Rutas con viajes disponibles ese día, para sugerir
   const suggestions = Array.from(
     new Map(
       allTrips()
@@ -52,7 +54,6 @@ export default async function Home({
     ).values(),
   ).slice(0, 6);
 
-  // Si no hay nada en esa ruta, ofrecemos otros días con viajes
   const otherDates = sameZone
     ? []
     : Array.from(
@@ -67,54 +68,78 @@ export default async function Home({
 
   return (
     <>
-      <Tabs current="buscar" />
+      <TopBar />
 
-      <h1>¿Para dónde vas?</h1>
-      <p className="subtitle">
-        Reserva tu puesto en un carro que ya sale hacia tu destino. Pagas
-        menos, llegas igual.
-      </p>
-
-      <SearchForm origin={origin} destination={destination} date={date} sort={sort} />
-
-      {sameZone && (
-        <div className="alert alert-warn">
-          <strong>El origen y el destino son el mismo.</strong>
-          Elige dos zonas distintas para poder buscar viajes.
+      <main className="screen" id="contenido">
+        {/* Saludo corto, como abre una app de viaje */}
+        <div className="greet">
+          <h1 className="greet-title">¿Para dónde vas?</h1>
+          <p className="greet-sub">
+            Alguien ya va para allá. Reserva tu puesto.
+          </p>
         </div>
-      )}
 
-      <div className="chips">
-        <span className="chips-label">Rutas con viajes hoy</span>
-        <div className="chips-row">
-          {suggestions.map((t) => (
-            <a
-              key={`${t.origin}-${t.destination}`}
-              className={`chip ${
-                t.origin === origin && t.destination === destination ? 'chip-on' : ''
-              }`}
-              href={`/?origin=${encodeURIComponent(t.origin)}&destination=${encodeURIComponent(
-                t.destination,
-              )}&date=${date}&sort=${sort}`}
-            >
-              {t.origin} → {t.destination}
-            </a>
-          ))}
-        </div>
-      </div>
-
-      {!sameZone && (
-        <TripList
-          trips={trips}
+        <SearchForm
           origin={origin}
           destination={destination}
           date={date}
           sort={sort}
-          km={km}
-          minutes={minutes}
-          otherDates={otherDates}
+          suggestedFare={sameZone ? null : fare.suggested}
+          km={sameZone ? null : km}
         />
-      )}
+
+        {sameZone && (
+          <div className="alert alert-warn">
+            <strong>El origen y el destino son el mismo</strong>
+            Elige dos zonas distintas para poder buscar.
+          </div>
+        )}
+
+        {suggestions.length > 0 && (
+          <section className="quick">
+            <h2 className="sec-title">Rutas con carros hoy</h2>
+            <div className="quick-scroll">
+              {suggestions.map((t) => {
+                const f = computeFare(t.origin, t.destination, t.departure_time);
+                const on = t.origin === origin && t.destination === destination;
+                return (
+                  <a
+                    key={`${t.origin}-${t.destination}`}
+                    className={`quick-card ${on ? 'on' : ''}`}
+                    href={`/?origin=${encodeURIComponent(t.origin)}&destination=${encodeURIComponent(
+                      t.destination,
+                    )}&date=${date}&sort=${sort}`}
+                  >
+                    <span className="qc-route">
+                      {t.origin}
+                      <em>→</em>
+                      {t.destination}
+                    </span>
+                    <span className="qc-meta">
+                      {f.km} km · desde ${f.floor.toFixed(2)}
+                    </span>
+                  </a>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {!sameZone && (
+          <TripList
+            trips={trips}
+            origin={origin}
+            destination={destination}
+            date={date}
+            sort={sort}
+            km={km}
+            minutes={minutes}
+            otherDates={otherDates}
+          />
+        )}
+      </main>
+
+      <BottomNav current="buscar" />
     </>
   );
 }

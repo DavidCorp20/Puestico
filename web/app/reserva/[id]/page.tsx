@@ -4,6 +4,7 @@ import { findTrip, freeSeats, ratingFor } from '../../../lib/store';
 import PayButton from './PayButton';
 import Avatar from '../../Avatar';
 import Stars from '../../Stars';
+import TopBar from '../../TopBar';
 
 export default async function Reserva({
   params,
@@ -21,14 +22,19 @@ export default async function Reserva({
 
   if (!trip) {
     return (
-      <div className="empty">
-        <span className="empty-icon">🤔</span>
-        <strong>No encontramos ese viaje</strong>
-        Puede que el conductor lo haya dado de baja.
-        <a className="btn" href="/" style={{ marginTop: 14 }}>
-          Volver a buscar
-        </a>
-      </div>
+      <>
+        <TopBar title="Reserva" back="/" />
+        <main className="screen">
+          <div className="empty">
+            <span className="empty-icon">🤔</span>
+            <strong>No encontramos ese viaje</strong>
+            Puede que el conductor lo haya dado de baja.
+            <a className="btn" href="/" style={{ marginTop: 14 }}>
+              Volver a buscar
+            </a>
+          </div>
+        </main>
+      </>
     );
   }
 
@@ -41,6 +47,8 @@ export default async function Reserva({
   if (sp.paid === '1') {
     return (
       <>
+        <TopBar title="Puesto reservado" back="/" />
+        <main className="screen">
         <div className="card" style={{ textAlign: 'center' }}>
           <span className="success-icon">✅</span>
           <h1>¡Puesto reservado!</h1>
@@ -132,6 +140,7 @@ export default async function Reserva({
           </a>
           <a className="btn btn-ghost" href="/">Buscar otro viaje</a>
         </div>
+        </main>
       </>
     );
   }
@@ -139,10 +148,12 @@ export default async function Reserva({
   // ─── Pantalla de pago ───────────────────────────────────
   return (
     <>
-      <a className="back-link" href={`/viaje/${trip.id}`}>← Volver al viaje</a>
-
-      <h1>Confirma y paga</h1>
-      <p className="subtitle">Revisa que todo esté bien antes de confirmar.</p>
+      <TopBar title="Confirma y paga" back={`/viaje/${trip.id}`} />
+      <main className="screen">
+      <div className="greet">
+        <h1 className="greet-title">Confirma y paga</h1>
+        <p className="greet-sub">Revisa que todo esté bien antes de confirmar.</p>
+      </div>
 
       <div className="card">
         <h2>Resumen</h2>
@@ -233,6 +244,7 @@ export default async function Reserva({
         Modo demo: no se cobra nada. Al confirmar simulamos el pago para que
         puedas ver el recorrido completo.
       </p>
+      </main>
     </>
   );
 }

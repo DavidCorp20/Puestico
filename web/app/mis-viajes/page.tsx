@@ -10,7 +10,8 @@ import {
 } from '../../lib/store';
 import Avatar from '../Avatar';
 import Stars from '../Stars';
-import Tabs from '../Tabs';
+import TopBar from '../TopBar';
+import BottomNav from '../BottomNav';
 import RatingForm from '../RatingForm';
 import CancelButton from './CancelButton';
 
@@ -45,10 +46,12 @@ export default async function MisViajes({
 
   return (
     <>
-      <Tabs current="mis-viajes" passenger={passenger.id} />
-
-      <h1>Mis viajes</h1>
-      <p className="subtitle">Tus reservas y en qué va cada una.</p>
+      <TopBar />
+      <main className="screen" id="contenido">
+      <div className="greet">
+        <h1 className="greet-title">Mis viajes</h1>
+        <p className="greet-sub">Tus puestos y en qué va cada uno.</p>
+      </div>
 
       <form className="card compact" method="get">
         <div className="field">
@@ -236,6 +239,8 @@ export default async function MisViajes({
           </div>
         );
       })}
+      </main>
+      <BottomNav current="mis-viajes" passenger={passenger.id} />
     </>
   );
 }

@@ -1,5 +1,6 @@
 import { TEST_DRIVERS } from '../../../lib/data';
 import PublishForm from './PublishForm';
+import TopBar from '../../TopBar';
 
 export default async function Publicar({
   searchParams,
@@ -11,15 +12,17 @@ export default async function Publicar({
 
   return (
     <>
-      <a className="back-link" href={`/conductor?driver=${driverId}`}>
-        ← Volver
-      </a>
-      <h1>Publicar un viaje</h1>
-      <p className="subtitle">
-        Di cuándo sales y cuántos puestos tienes libres.
-      </p>
+      <TopBar title="Publicar viaje" back={`/conductor?driver=${driverId}`} />
+      <main className="screen">
+        <div className="greet">
+          <h1 className="greet-title">Publica tu viaje</h1>
+          <p className="greet-sub">
+            Di cuándo sales y cuántos puestos tienes libres.
+          </p>
+        </div>
 
-      <PublishForm driverId={driverId} />
+        <PublishForm driverId={driverId} />
+      </main>
     </>
   );
 }

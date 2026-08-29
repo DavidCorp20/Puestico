@@ -5,6 +5,7 @@ import RouteMap from '../../RouteMap';
 import Avatar from '../../Avatar';
 import Stars from '../../Stars';
 import FareDetail from '../../FareDetail';
+import TopBar from '../../TopBar';
 
 export default async function TripDetail({
   params,
@@ -16,14 +17,19 @@ export default async function TripDetail({
 
   if (!trip) {
     return (
-      <div className="empty">
-        <span className="empty-icon">🤔</span>
-        <strong>No encontramos ese viaje</strong>
-        Puede que el conductor lo haya dado de baja.
-        <a className="btn" href="/" style={{ marginTop: 14 }}>
-          Volver a buscar
-        </a>
-      </div>
+      <>
+        <TopBar title="Viaje" back="/" />
+        <main className="screen">
+          <div className="empty">
+            <span className="empty-icon">🤔</span>
+            <strong>No encontramos ese viaje</strong>
+            Puede que el conductor lo haya dado de baja.
+            <a className="btn" href="/" style={{ marginTop: 14 }}>
+              Volver a buscar
+            </a>
+          </div>
+        </main>
+      </>
     );
   }
 
@@ -38,7 +44,8 @@ export default async function TripDetail({
   if (free === 0) {
     return (
       <>
-        <a className="back-link" href="/">← Volver a los resultados</a>
+        <TopBar title="Viaje lleno" back="/" />
+        <main className="screen">
         <div className="alert alert-warn">
           <strong>Este viaje se llenó</strong>
           Alguien tomó el último puesto mientras lo mirabas. Te mostramos los
@@ -55,14 +62,15 @@ export default async function TripDetail({
         </div>
 
         <a className="btn" href="/">Buscar otro viaje</a>
+        </main>
       </>
     );
   }
 
   return (
     <>
-      <a className="back-link" href="/">← Volver a los resultados</a>
-
+      <TopBar title={`${trip.origin} → ${trip.destination}`} back="/" />
+      <main className="screen has-sheet" id="contenido">
       <div className="detail-head">
         <div>
           <h1>{trip.origin} → {trip.destination}</h1>
@@ -146,40 +154,39 @@ export default async function TripDetail({
         </div>
       </div>
 
-      <form className="card" action={`/reserva/${trip.id}`} method="get">
-        <h2>Reservar mi puesto</h2>
-
-        <div className="field mb">
-          <label htmlFor="passenger">¿Quién viaja?</label>
-          <select id="passenger" name="passenger" defaultValue={TEST_USERS[0].id}>
-            {TEST_USERS.map((u) => (
-              <option key={u.id} value={u.id}>{u.name}</option>
-            ))}
-          </select>
+      {/* Hoja de reserva anclada abajo, como en Uber/Yummy: la acción
+          principal siempre al alcance del pulgar */}
+      <form className="book-sheet" action={`/reserva/${trip.id}`} method="get">
+        <div className="bs-grid">
+          <div className="bs-field">
+            <label htmlFor="passenger">¿Quién viaja?</label>
+            <select id="passenger" name="passenger" defaultValue={TEST_USERS[0].id}>
+              {TEST_USERS.map((u) => (
+                <option key={u.id} value={u.id}>{u.name}</option>
+              ))}
+            </select>
+          </div>
+          <div className="bs-field">
+            <label htmlFor="seats">Puestos</label>
+            <select id="seats" name="seats" defaultValue="1">
+              {Array.from({ length: free }, (_, i) => i + 1).map((n) => (
+                <option key={n} value={n}>{n}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
-        <div className="field mb">
-          <label htmlFor="seats">¿Cuántos puestos?</label>
-          <select id="seats" name="seats" defaultValue="1">
-            {Array.from({ length: free }, (_, i) => i + 1).map((n) => (
-              <option key={n} value={n}>{n}</option>
-            ))}
-          </select>
+        <div className="bs-action">
+          <div className="bs-price">
+            <strong>${trip.price_usd.toFixed(2)}</strong>
+            <small>por puesto</small>
+          </div>
+          <button className="btn" type="submit">
+            Reservar mi puesto
+          </button>
         </div>
-
-        <div className="row row-total">
-          <span>Precio por puesto</span>
-          <span>${trip.price_usd.toFixed(2)}</span>
-        </div>
-
-        <button className="btn" type="submit">
-          Reservar mi puesto
-        </button>
-
-        <p className="note">
-          Modo demo: no se cobra nada real. El pago es simulado.
-        </p>
       </form>
+      </main>
     </>
   );
 }

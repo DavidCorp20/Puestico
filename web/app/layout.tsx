@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
-import Logo from './Logo';
 
 export const metadata: Metadata = {
   title: 'Puestico — Alguien ya va para allá. Móntate.',
@@ -14,14 +13,24 @@ export const metadata: Metadata = {
     apple: '/apple-touch-icon.png',
   },
   manifest: '/manifest.webmanifest',
+  appleWebApp: { capable: true, statusBarStyle: 'black-translucent' },
 };
 
 export const viewport: Viewport = {
   themeColor: '#0F1419',
   width: 'device-width',
   initialScale: 1,
+  maximumScale: 5,
 };
 
+/**
+ * El armazón es de app, no de sitio web.
+ *
+ * El teléfono manda: contenido a ancho completo con un tope de 480px
+ * centrado (como se ve una app en escritorio), y la navegación abajo,
+ * donde llega el pulgar. La cabecera la pone cada pantalla, porque en
+ * una app cada vista tiene su propia barra — no una global.
+ */
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es">
@@ -29,37 +38,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <a href="#contenido" className="skip-link">
           Ir al contenido
         </a>
-
-        <header className="header">
-          <a href="/" className="logo">
-            <Logo size={32} />
-            <span className="logo-text">
-              Puestico
-              <small>tu puesto, tu viaje</small>
-            </span>
-          </a>
-          <div className="header-right">
-            <a className="header-link" href="/inicio">
-              La propuesta
-            </a>
-            <a className="header-link" href="/metricas">
-              Métricas
-            </a>
-            <span className="badge-demo">
-              <span className="dot" />
-              Modo demo
-            </span>
-          </div>
-        </header>
-
-        <main className="main" id="contenido">
-          {children}
-        </main>
-
-        <footer className="footer">
-          <Logo size={18} />
-          <span>Puestico · Área metropolitana de Caracas</span>
-        </footer>
+        <div className="app-shell">{children}</div>
       </body>
     </html>
   );

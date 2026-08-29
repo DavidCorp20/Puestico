@@ -2064,3 +2064,797 @@ textarea:focus-visible,
   .header-link { font-size: 0.75rem; padding: 6px 7px; }
   .badge-demo { display: none; }
 }
+
+/* ═══════════════════════════════════════════════════════
+   REDISEÑO CON FORMA DE APP DE CELULAR
+   Referencia: Yummy, Ridery, Uber. Mismos colores, mismo
+   verde; lo que cambia es la arquitectura de la interfaz —
+   navegación abajo, pantallas a ancho completo, barra por
+   pantalla, y toques venezolanos en los acentos.
+   ═══════════════════════════════════════════════════════ */
+
+body {
+  /* En una app no hay scroll horizontal ni rebote raro */
+  overflow-x: hidden;
+}
+
+/* El armazón: una app centrada, no una página web ancha */
+.app-shell {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  position: relative;
+  /* En escritorio se ve como un teléfono: borde y sombra */
+  box-shadow: 0 0 0 1px var(--border-soft), 0 30px 80px rgba(0, 0, 0, 0.5);
+}
+
+@media (min-width: 900px) {
+  body {
+    background:
+      radial-gradient(1000px 600px at 50% 0%, #151E27, transparent 70%),
+      #0A0E12;
+    padding: 0;
+  }
+}
+
+/* ─── Barra superior por pantalla ──────────────────── */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 16px;
+  background: rgba(15, 20, 25, 0.88);
+  backdrop-filter: blur(16px) saturate(1.4);
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  border-bottom: 1px solid transparent;
+}
+
+.topbar-inner {
+  border-bottom-color: var(--border-soft);
+  display: grid;
+  grid-template-columns: 40px 1fr 40px;
+  align-items: center;
+  padding: 10px 12px;
+}
+
+.tb-back {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  color: var(--text);
+  text-decoration: none;
+  transition: background 0.15s;
+}
+.tb-back:active { background: var(--surface-2); }
+
+.tb-title {
+  text-align: center;
+  font-weight: 650;
+  font-size: 0.98rem;
+  letter-spacing: -0.01em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tb-action { display: grid; place-items: center; }
+
+/* ─── El lienzo de cada pantalla ───────────────────── */
+.screen {
+  flex: 1;
+  padding: 18px 16px calc(84px + env(safe-area-inset-bottom, 0px));
+  animation: screen-in 0.26s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes screen-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* La animación global anterior competía con esta */
+.main > * { animation: none; }
+
+/* ─── Navegación inferior ──────────────────────────── */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  background: rgba(20, 26, 33, 0.94);
+  backdrop-filter: blur(20px) saturate(1.5);
+  border-top: 1px solid var(--border-soft);
+  padding: 7px 4px calc(7px + env(safe-area-inset-bottom, 0px));
+  z-index: 40;
+}
+
+.bn-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 6px 2px;
+  color: var(--muted-2);
+  text-decoration: none;
+  border-radius: var(--radius-xs);
+  transition: color 0.18s;
+  position: relative;
+}
+
+.bn-item.active { color: var(--accent-text); }
+
+.bn-item.active::before {
+  content: '';
+  position: absolute;
+  top: -7px;
+  width: 26px;
+  height: 3px;
+  border-radius: 0 0 3px 3px;
+  background: var(--accent-text);
+}
+
+.bn-icon { position: relative; display: grid; place-items: center; }
+
+.bn-label {
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.bn-badge {
+  position: absolute;
+  top: -4px;
+  right: -7px;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 0.64rem;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+  border: 2px solid #141A21;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── Saludo de la pantalla de inicio ──────────────── */
+.greet { margin-bottom: 18px; }
+
+.greet-title {
+  font-size: 1.7rem;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.15;
+  margin-bottom: 4px;
+}
+
+.greet-sub {
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.sec-title {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted-2);
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+/* ─── Buscador con forma de trayecto ───────────────── */
+.trip-search {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  margin-bottom: 22px;
+  box-shadow: var(--shadow);
+}
+
+.route-input {
+  position: relative;
+  display: flex;
+  gap: 12px;
+  align-items: stretch;
+}
+
+/* El riel: dos puntos unidos por una línea */
+.route-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 0;
+  flex-shrink: 0;
+}
+
+.rail-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.rail-dot.origin {
+  background: var(--surface);
+  border: 2.5px solid var(--accent-text);
+}
+.rail-dot.dest {
+  background: var(--accent-text);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.rail-line {
+  flex: 1;
+  width: 2px;
+  min-height: 26px;
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--border-strong) 0 4px,
+    transparent 4px 8px
+  );
+  margin: 4px 0;
+}
+
+.route-fields { flex: 1; min-width: 0; }
+
+.rf label {
+  display: block;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--muted-2);
+  font-weight: 650;
+  margin-bottom: 2px;
+}
+
+.rf select {
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 1.02rem;
+  font-weight: 600;
+  font-family: inherit;
+  padding: 2px 0;
+  cursor: pointer;
+  appearance: none;
+  text-overflow: ellipsis;
+}
+.rf select:focus-visible { box-shadow: none; outline: none; }
+.rf:focus-within label { color: var(--accent-text); }
+
+.rf-divider {
+  height: 1px;
+  background: var(--border-soft);
+  margin: 11px 0;
+}
+
+.route-swap {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.route-swap:hover {
+  color: var(--accent-text);
+  border-color: var(--accent);
+  transform: translateY(-50%) rotate(180deg);
+}
+
+.search-row {
+  display: flex;
+  gap: 9px;
+  margin-top: 14px;
+}
+
+.sr-field {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0 12px;
+  color: var(--muted-2);
+}
+.sr-field input {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.9rem;
+  padding: 11px 0;
+  min-width: 0;
+}
+.sr-field input:focus-visible { box-shadow: none; outline: none; }
+
+.sr-toggle {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 11px 15px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.sr-toggle.on {
+  color: var(--accent-text);
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.search-extra {
+  margin-top: 11px;
+  animation: fade-up 0.2s ease both;
+}
+.search-extra label {
+  display: block;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--muted-2);
+  font-weight: 650;
+  margin-bottom: 6px;
+}
+
+.fare-hint {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 13px 0;
+  padding: 9px 12px;
+  background: var(--accent-soft);
+  border-radius: var(--radius-xs);
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+.fare-hint strong { color: var(--accent-text); }
+.fare-hint svg { color: var(--accent-text); flex-shrink: 0; }
+
+/* ─── Carrusel de rutas rápidas ────────────────────── */
+.quick { margin-bottom: 24px; }
+
+.quick-scroll {
+  display: flex;
+  gap: 9px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding-bottom: 4px;
+  /* Se sale del padding de la pantalla para que "sangre" al borde */
+  margin: 0 -16px;
+  padding-left: 16px;
+  padding-right: 16px;
+  scrollbar-width: none;
+}
+.quick-scroll::-webkit-scrollbar { display: none; }
+
+.quick-card {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  text-decoration: none;
+  min-width: 9.5rem;
+  transition: all 0.18s;
+}
+.quick-card.on {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.quick-card:active { transform: scale(0.97); }
+
+.qc-route {
+  display: block;
+  color: var(--text);
+  font-size: 0.87rem;
+  font-weight: 650;
+  line-height: 1.35;
+  margin-bottom: 3px;
+}
+.qc-route em {
+  color: var(--accent-text);
+  font-style: normal;
+  margin: 0 5px;
+}
+
+.qc-meta {
+  display: block;
+  color: var(--muted-2);
+  font-size: 0.73rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── La cabecera vieja y el nav viejo se retiran ──── */
+.header, .footer, .mode-switch { display: none; }
+
+/* El .main viejo queda como .screen para las pantallas
+   que todavía no migré, para que nada quede roto */
+.main {
+  flex: 1;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 18px 16px calc(84px + env(safe-area-inset-bottom, 0px));
+}
+
+/* ─── Tarjeta de viaje con forma de app ────────────── */
+.ride-card {
+  display: block;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  margin-bottom: 11px;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.15s, border-color 0.15s, background 0.15s;
+  position: relative;
+  overflow: hidden;
+}
+
+a.ride-card:active { transform: scale(0.985); background: var(--surface-2); }
+a.ride-card:hover { border-color: var(--border-strong); }
+
+.ride-card.is-disabled { opacity: 0.55; pointer-events: none; }
+
+.rc-head {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 13px;
+}
+
+.rc-who { flex: 1; min-width: 0; }
+
+.rc-name {
+  font-weight: 650;
+  font-size: 0.95rem;
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.rc-rating { margin-top: 2px; font-size: 0.78rem; color: var(--muted); }
+
+.rc-time { text-align: right; flex-shrink: 0; }
+.rc-time strong {
+  display: block;
+  font-size: 1.28rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+.rc-time small {
+  color: var(--muted-2);
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* El trayecto dentro de la tarjeta */
+.rc-route {
+  display: flex;
+  gap: 10px;
+  padding: 11px 0;
+  border-top: 1px solid var(--border-soft);
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.rc-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4px 0;
+  flex-shrink: 0;
+}
+
+.rail-line.short { min-height: 16px; margin: 3px 0; }
+
+.rc-places {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  min-width: 0;
+}
+.rc-places span { line-height: 1.1; }
+
+.rc-foot {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.rc-car {
+  color: var(--muted-2);
+  font-size: 0.78rem;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rc-price {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--accent-text);
+  letter-spacing: -0.025em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.rc-price small {
+  font-size: 0.68rem;
+  font-weight: 400;
+  color: var(--muted-2);
+  letter-spacing: 0;
+}
+
+.results-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+/* ─── Hoja de reserva anclada abajo ────────────────── */
+.book-sheet {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px;
+  background: rgba(22, 28, 35, 0.97);
+  backdrop-filter: blur(20px) saturate(1.5);
+  border-top: 1px solid var(--border);
+  border-radius: 20px 20px 0 0;
+  padding: 16px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+  z-index: 45;
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.45);
+  animation: sheet-up 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes sheet-up {
+  from { transform: translate(-50%, 100%); }
+  to   { transform: translate(-50%, 0); }
+}
+
+/* Asita de la hoja, el detalle que la vuelve "app" */
+.book-sheet::before {
+  content: '';
+  position: absolute;
+  top: 7px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 38px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--border-strong);
+}
+
+.bs-grid {
+  display: grid;
+  grid-template-columns: 1fr 88px;
+  gap: 10px;
+  margin: 6px 0 13px;
+}
+
+.bs-field label {
+  display: block;
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--muted-2);
+  font-weight: 650;
+  margin-bottom: 5px;
+}
+
+.bs-field select {
+  width: 100%;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.92rem;
+  font-weight: 600;
+  padding: 10px 11px;
+  cursor: pointer;
+}
+
+.bs-action {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+
+.bs-price { flex-shrink: 0; }
+.bs-price strong {
+  display: block;
+  font-size: 1.45rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--accent-text);
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+}
+.bs-price small {
+  color: var(--muted-2);
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.bs-action .btn { flex: 1; width: auto; margin: 0; }
+
+/* La pantalla de detalle deja aire para la hoja */
+.screen.has-sheet {
+  padding-bottom: calc(158px + env(safe-area-inset-bottom, 0px));
+}
+
+/* ═══════════════════════════════════════════════════════
+   Carácter venezolano — sin caer en la bandera literal.
+   El acento sigue siendo el verde; esto son detalles de
+   textura y calidez que ubican la app en Caracas.
+   ═══════════════════════════════════════════════════════ */
+
+:root {
+  /* Guiño al tricolor, usado SOLO como filete decorativo:
+     nunca como color de marca ni de estado. */
+  --ve-yellow: #F5B841;
+  --ve-blue:   #3B6FD4;
+  --ve-red:    #D64545;
+}
+
+/* Filete tricolor de 2px arriba de la app — presente pero discreto */
+.app-shell::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px;
+  height: 2px;
+  z-index: 60;
+  background: linear-gradient(
+    90deg,
+    var(--ve-yellow) 0 33.3%,
+    var(--ve-blue) 33.3% 66.6%,
+    var(--ve-red) 66.6% 100%
+  );
+  opacity: 0.85;
+}
+
+/* Textura sutil: el relieve del cerro Ávila detrás del saludo.
+   Es un SVG en línea, sin imagen ni petición extra. */
+.greet {
+  position: relative;
+}
+.greet::after {
+  content: '';
+  position: absolute;
+  right: -16px;
+  top: -6px;
+  width: 148px;
+  height: 62px;
+  pointer-events: none;
+  opacity: 0.5;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 70'%3E%3Cpath d='M0 62 L26 34 L40 46 L62 18 L84 42 L104 26 L126 50 L146 30 L160 44 L160 70 L0 70 Z' fill='none' stroke='%2322C55E' stroke-width='1.4' stroke-opacity='.5'/%3E%3Cpath d='M0 68 L30 48 L52 58 L74 36 L96 54 L118 40 L140 56 L160 46' fill='none' stroke='%2322C55E' stroke-width='1' stroke-opacity='.25'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-size: contain;
+}
+
+/* Tipografía un poco más apretada y expresiva en los titulares:
+   es lo que separa "sencilla" de "sencilla pero sofisticada" */
+.greet-title,
+.hero-title,
+.kpi strong,
+.side-number,
+.rc-price,
+.bs-price strong,
+.fare-panel-price {
+  font-feature-settings: 'ss01', 'cv02', 'cv03';
+}
+
+/* Presión táctil: todo lo que se toca responde */
+.btn:active { transform: scale(0.985); }
+.quick-card:active,
+.kyc-item:active,
+.sr-toggle:active { transform: scale(0.97); }
+
+/* Brillo verde detrás de la hoja de reserva y la barra inferior,
+   para que la app no se vea "plana" en pantalla grande */
+.bottom-nav::before {
+  content: '';
+  position: absolute;
+  inset: -40px 0 100% 0;
+  background: radial-gradient(
+    60% 100% at 50% 100%,
+    rgba(34, 197, 94, 0.06),
+    transparent 70%
+  );
+  pointer-events: none;
+}
+
+/* ─── Ajustes finos de las pantallas migradas ──────── */
+
+/* Las tarjetas ahora viven dentro de un ancho de teléfono */
+.card {
+  border-radius: var(--radius);
+  padding: 15px;
+  margin-bottom: 11px;
+}
+
+.stats, .facts-row, .kpi-grid, .big-numbers, .growth-strip {
+  gap: 8px;
+}
+
+.hero-driver {
+  padding: 2px 0 6px;
+  margin-bottom: 14px;
+}
+
+/* El mapa ocupa todo el ancho de la pantalla, como en una app */
+.map-card {
+  margin-left: -16px;
+  margin-right: -16px;
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+  padding: 12px 10px;
+}
+
+/* La portada ya no necesita su propio ancho */
+.landing { max-width: none; }
+.hero { padding: 10px 0 26px; }
+
+@media (max-width: 380px) {
+  .greet-title { font-size: 1.5rem; }
+  .bn-label { font-size: 0.61rem; }
+  .rc-time strong { font-size: 1.15rem; }
+  .bs-grid { grid-template-columns: 1fr 76px; }
+}

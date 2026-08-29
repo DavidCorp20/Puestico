@@ -1,6 +1,7 @@
 import { metrics } from '../../lib/metrics';
 import { computeFare, passengerSavings, FARE } from '../../lib/fare';
 import Logo from '../Logo';
+import BottomNav from '../BottomNav';
 
 export const metadata = {
   title: 'Puestico — Alguien ya va para allá. Móntate.',
@@ -16,7 +17,8 @@ export default function Inicio() {
   const ahorro = passengerSavings(ruta.suggested, ruta);
 
   return (
-    <div className="landing">
+    <>
+    <main className="screen landing" id="contenido">
       {/* ─── Propuesta ────────────────────────────── */}
       <section className="hero">
         <Logo size={64} />
@@ -177,6 +179,8 @@ export default function Inicio() {
           </a>
         </div>
       </section>
-    </div>
+    </main>
+    <BottomNav current="buscar" />
+    </>
   );
 }

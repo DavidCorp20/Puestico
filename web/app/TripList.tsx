@@ -65,17 +65,11 @@ export default function TripList({
   return (
     <>
       <div className="results-head">
-        <h2>
-          {trips.length} {trips.length === 1 ? 'viaje' : 'viajes'}
-          {available.length < trips.length && (
-            <span className="h2-note">
-              {' '}
-              · {trips.length - available.length} sin puestos
-            </span>
-          )}
+        <h2 className="sec-title" style={{ marginBottom: 0 }}>
+          {trips.length} {trips.length === 1 ? 'carro va' : 'carros van'} para allá
         </h2>
         <span className="results-meta">
-          {km} km · {fmtDuration(minutes)} aprox.
+          {km} km · {fmtDuration(minutes)}
         </span>
       </div>
 
@@ -88,32 +82,42 @@ export default function TripList({
 
         const card = (
           <>
-            <div className="trip-top">
-              <div>
-                <div className="trip-time">{trip.departure_time}</div>
-                <div className="trip-route">
-                  {trip.origin} → {trip.destination}
-                </div>
-              </div>
-              <div className="trip-price">
-                ${trip.price_usd.toFixed(2)}
-                <small>por puesto</small>
-              </div>
-            </div>
-
-            <div className="driver-row">
-              <Avatar name={trip.driver.name} />
-              <div>
-                <div className="driver-name">
+            {/* Fila 1: conductor + hora de salida */}
+            <div className="rc-head">
+              <Avatar name={trip.driver.name} size={42} />
+              <div className="rc-who">
+                <div className="rc-name">
                   {trip.driver.name}
                   {isCheapest && <span className="tag-best">más barato</span>}
                 </div>
-                <div className="driver-meta">
+                <div className="rc-rating">
                   <Stars value={rating.value} showValue count={rating.count} />
-                  <span className="sep">·</span>
-                  {trip.vehicle.model} · {trip.vehicle.plate}
                 </div>
               </div>
+              <div className="rc-time">
+                <strong>{trip.departure_time}</strong>
+                <small>sale</small>
+              </div>
+            </div>
+
+            {/* Fila 2: el trayecto, como un trayecto */}
+            <div className="rc-route">
+              <span className="rc-rail" aria-hidden="true">
+                <span className="rail-dot origin" />
+                <span className="rail-line short" />
+                <span className="rail-dot dest" />
+              </span>
+              <span className="rc-places">
+                <span>{trip.origin}</span>
+                <span>{trip.destination}</span>
+              </span>
+            </div>
+
+            {/* Fila 3: carro, puestos y precio */}
+            <div className="rc-foot">
+              <span className="rc-car">
+                {trip.vehicle.model} · {trip.vehicle.plate}
+              </span>
               {soldOut ? (
                 <span className="seats-tag sold-out">Sin puestos</span>
               ) : (
@@ -121,6 +125,10 @@ export default function TripList({
                   {free === 1 ? 'último puesto' : `${free} puestos`}
                 </span>
               )}
+              <span className="rc-price">
+                ${trip.price_usd.toFixed(2)}
+                <small>/puesto</small>
+              </span>
             </div>
 
             <FareBadge
@@ -135,7 +143,7 @@ export default function TripList({
 
         if (soldOut) {
           return (
-            <div className="trip-card is-disabled" key={trip.id}>
+            <div className="ride-card is-disabled" key={trip.id}>
               {card}
               <p className="note">
                 Este viaje se llenó. Prueba con otro horario de la lista.
@@ -145,7 +153,7 @@ export default function TripList({
         }
 
         return (
-          <a key={trip.id} className="trip-card" href={`/viaje/${trip.id}`}>
+          <a key={trip.id} className="ride-card" href={`/viaje/${trip.id}`}>
             {card}
           </a>
         );
