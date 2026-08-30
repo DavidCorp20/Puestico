@@ -20,7 +20,12 @@ describe('BookingsService — recorrido P1 (pasajero)', () => {
   });
 
   beforeEach(() => {
-    service = new BookingsService(new PaymentsService());
+    // Las reglas de negocio se prueban SIN base de datos a proposito:
+    // son puras y deben poder verificarse en milisegundos. La persistencia
+    // se prueba aparte, contra Postgres de verdad (test/db.e2e.mjs).
+    service = new BookingsService(new PaymentsService(), {
+      isReady: false,
+    } as any);
   });
 
   // ─── Validación de reserva ─────────────────────────────────

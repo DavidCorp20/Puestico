@@ -1,8 +1,20 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Body,
+  Param,
+  Query,
+  Request,
+  UseGuards,
+  ForbiddenException,
+} from '@nestjs/common';
 import { TripsService, TripSearchQuery } from './trips.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
-import { IsString, IsNumber, IsInt, IsOptional, IsDateString, Min } from 'class-validator';
+import { IsString, IsNumber, IsInt, IsOptional, IsDateString, IsEnum, Min } from 'class-validator';
 
 class TripCreateDto {
   @IsString() origin: string;
@@ -19,8 +31,24 @@ class TripCreateDto {
   @IsString() vehicle_id: string;
 }
 
+/** IsEnum necesita un enum de verdad: con un array de strings el
+    mensaje de error sale vacío ("must be one of the following values: "). */
+export enum TripStatus {
+  scheduled = 'scheduled',
+  active = 'active',
+  completed = 'completed',
+  cancelled = 'cancelled',
+}
+
 class TripStatusDto {
-  status: 'scheduled' | 'active' | 'completed' | 'cancelled';
+  // Sin el decorador, el ValidationPipe con `whitelist: true` BORRA la
+  // propiedad y llegaba `undefined` — el error decía "no puede pasar a
+  // undefined" en vez de rechazar la petición. Un DTO sin validar con
+  // whitelist activo es peor que no tener DTO.
+  @IsEnum(TripStatus, {
+    message: `status debe ser uno de: ${Object.values(TripStatus).join(', ')}`,
+  })
+  status: TripStatus;
 }
 
 class TripLocationDto {
@@ -36,9 +64,21 @@ export class TripsController {
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
+  /** Publicar un viaje. El conductor sale del token, no del cuerpo. */
   @Post()
-  create(@Body() dto: TripCreateDto) {
-    return this.tripsService.create(dto);
+  create(@Request() req, @Body() dto: TripCreateDto) {
+    if (req.user.role !== 'driver') {
+      throw new ForbiddenException('Solo un conductor publica viajes');
+    }
+    return this.tripsService.create(dto, req.user.id);
+  }
+
+  /** Mis viajes como conductor — su panel. */
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Get('mine')
+  mine(@Request() req, @Query('status') status?: string) {
+    return this.tripsService.findByDriver(req.user.id, status);
   }
 
   @Get()
@@ -61,29 +101,36 @@ export class TripsController {
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: Partial<TripCreateDto>) {
-    // TODO: Implementar
-  }
+
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @Delete(':id')
-  cancel(@Param('id') id: string) {
-    return this.tripsService.cancel(id);
+  cancel(@Request() req, @Param('id') id: string) {
+    return this.tripsService.cancel(id, req.user.id);
   }
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @Patch(':id/status')
-  updateStatus(@Param('id') id: string, @Body() dto: TripStatusDto) {
-    return this.tripsService.updateStatus(id, dto.status);
+  updateStatus(@Request() req, @Param('id') id: string, @Body() dto: TripStatusDto) {
+    return this.tripsService.updateStatus(id, dto.status, req.user.id);
   }
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @Post(':id/location')
-  updateLocation(@Param('id') id: string, @Body() dto: TripLocationDto) {
+  async updateLocation(
+    @Request() req,
+    @Param('id') id: string,
+    @Body() dto: TripLocationDto,
+  ) {
+    // Solo el conductor del viaje reporta su posición: si no, cualquiera
+    // puede mover el punto del mapa que el pasajero está mirando.
+    const trip: any = await this.tripsService.findById(id);
+    if (!trip || trip.driver_id !== req.user.id) {
+      throw new ForbiddenException('El viaje no es tuyo');
+    }
     return this.tripsService.updateLocation(id, dto.lat, dto.lng, dto.speed);
   }
 }

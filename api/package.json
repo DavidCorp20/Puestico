@@ -12,8 +12,9 @@
     "test": "jest",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "typeorm": "typeorm",
-    "migration:run": "psql $DATABASE_URL -f src/database/migrations/001_initial_schema.sql",
-    "seed:run": "psql $DATABASE_URL -f src/database/seeds/001_seed_data.sql"
+    "migration:run": "psql $DATABASE_URL -v ON_ERROR_STOP=1 -f src/database/migrations/001_initial_schema.sql -f src/database/migrations/002_fix_booking_seat_lock.sql",
+    "seed:run": "psql $DATABASE_URL -v ON_ERROR_STOP=1 -f src/database/seeds/001_seed_data.sql",
+    "test:db": "node --test test/db.e2e.mjs"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",

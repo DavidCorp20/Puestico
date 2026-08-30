@@ -7,7 +7,16 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.setGlobalPrefix('api');
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+      // Sin esto, un campo desconocido se BORRA en silencio y el error
+      // aparece más adelante como un dato faltante inexplicable. Mejor
+      // rechazar la petición y decir cuál campo sobra.
+      forbidNonWhitelisted: true,
+    }),
+  );
   app.enableCors({
     origin: process.env.CORS_ORIGIN?.split(',') || ['*'],
   });

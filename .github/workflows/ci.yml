@@ -47,19 +47,33 @@ jobs:
         working-directory: api
         run: npx jest --ci
 
-      - name: Load schema
+      # ON_ERROR_STOP es clave: sin eso psql seguía tras un error y el
+      # paso terminaba en verde con la base a medio cargar. Así se nos
+      # pasaron tres errores del esquema (ver migraciones 002 y 003).
+      - name: Cargar esquema y migraciones
         env:
           PGPASSWORD: carpool_test
         run: |
-          psql -h localhost -U carpool -d carpooling_ve_test \
-            -f api/src/database/migrations/001_initial_schema.sql
+          psql -h localhost -U carpool -d carpooling_ve_test -v ON_ERROR_STOP=1 \
+            -f api/src/database/migrations/001_initial_schema.sql \
+            -f api/src/database/migrations/002_fix_booking_seat_lock.sql \
+            -f api/src/database/migrations/003_signup_only_needs_phone.sql
 
-      - name: Load seed data
+      - name: Cargar datos de prueba
         env:
           PGPASSWORD: carpool_test
         run: |
-          psql -h localhost -U carpool -d carpooling_ve_test \
+          psql -h localhost -U carpool -d carpooling_ve_test -v ON_ERROR_STOP=1 \
             -f api/src/database/seeds/001_seed_data.sql
+
+      # Las pruebas que de verdad protegen el backend: corren contra
+      # PostgreSQL con PostGIS, no contra simulaciones. Son las que
+      # detectan la sobreventa de puestos y la búsqueda geográfica.
+      - name: Pruebas contra la base real
+        working-directory: api
+        env:
+          DATABASE_URL: postgresql://carpool:carpool_test@localhost:5432/carpooling_ve_test
+        run: npm run test:db
 
   web:
     name: Web — build y pruebas de identidad, pago y chat
