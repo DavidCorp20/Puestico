@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { zonesByArea } from '../lib/route';
-import { IconSwap, IconPin, IconClock } from './Icons';
+import { zonesByArea } from '../../lib/route';
+import { IconSwap, IconPin, IconClock } from '../Icons';
 
 /**
  * Buscador con forma de app de viaje: origen y destino apilados,

@@ -11,17 +11,24 @@ import TripControls from './TripControls';
 import Avatar from '../../../Avatar';
 import Stars from '../../../Stars';
 import TopBar from '../../../TopBar';
+import { redirect } from 'next/navigation';
+import { driverIdFor } from '../../../../lib/auth';
+import { requireDriver } from '../../../../lib/guard';
 
 export default async function DriverTrip({
   params,
-  searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ driver?: string }>;
 }) {
   const { id } = await params;
-  const sp = await searchParams;
+
+  // Solo conductores, y solo SUS viajes: ver el viaje de otro
+  // conductor mostraría sus pasajeros y su liquidación.
+  const user = await requireDriver(`/conductor/viaje/${id}`);
+  const myDriverId = driverIdFor(user) || user.id;
+
   const trip = findTrip(id);
+  if (trip && trip.driver.id !== myDriverId) redirect('/conductor');
 
   if (!trip) {
     return (
@@ -53,7 +60,7 @@ export default async function DriverTrip({
     <>
       <TopBar
         title={`${trip.origin} → ${trip.destination}`}
-        back={`/conductor?driver=${sp.driver || ''}`}
+        back="/conductor" 
       />
       <main className="screen">
       <div className="trip-top">
@@ -80,7 +87,7 @@ export default async function DriverTrip({
 
       <TripControls
         tripId={trip.id}
-        driverId={sp.driver || ''}
+        driverId={myDriverId}
         status={status}
         passengers={active.length}
       />

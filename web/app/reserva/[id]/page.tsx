@@ -1,7 +1,6 @@
-import { redirect } from 'next/navigation';
 import { quote, computeFare, passengerSavings } from '../../../lib/fare';
 import { findTrip, freeSeats, ratingFor } from '../../../lib/store';
-import { currentUser } from '../../../lib/session';
+import { requirePassenger } from '../../../lib/guard';
 import PayButton from './PayButton';
 import PayMethod from './PayMethod';
 import Avatar from '../../Avatar';
@@ -19,11 +18,8 @@ export default async function Reserva({
   const sp = await searchParams;
   const seats = Number(sp.seats || 1);
 
-  // Reservar exige sesión: es el punto donde la app deja de ser
-  // anónima, y donde el nombre que ve el conductor tiene que ser real.
-  const user = await currentUser();
-  if (!user) redirect(`/entrar?next=/reserva/${id}?seats=${seats}`);
-  if (!user.name) redirect('/entrar');
+  // Reservar es cosa de pasajeros: un conductor acá se va a su panel.
+  const user = await requirePassenger(`/reserva/${id}?seats=${seats}`);
   const passenger = user;
 
   const trip = findTrip(id);

@@ -7,6 +7,8 @@ import {
   insertReview,
   allReviews,
 } from '../../../lib/store';
+import { apiUser } from '../../../lib/guard';
+import { driverIdFor } from '../../../lib/auth';
 
 /**
  * Registra una calificación sobre una reserva ya finalizada.
@@ -19,10 +21,40 @@ import {
 export async function POST(request: Request) {
   const { booking_id, direction, stars, comment } = await request.json();
 
+  // Calificar exige sesión, y el sentido de la calificación tiene que
+  // coincidir con el rol: un pasajero califica al conductor y viceversa.
+  const auth = await apiUser();
+  if (!auth.ok) {
+    return NextResponse.json(
+      { error: auth.error, code: auth.code },
+      { status: auth.status },
+    );
+  }
+  const expected =
+    auth.user.role === 'driver' ? 'driver_to_passenger' : 'passenger_to_driver';
+  if (direction !== expected) {
+    return NextResponse.json(
+      { error: 'No puedes calificar en ese sentido.' },
+      { status: 403 },
+    );
+  }
+
   const booking = getBooking(booking_id);
   if (!booking) {
     return NextResponse.json({ error: 'Reserva no encontrada' }, { status: 404 });
   }
+
+  // Y tiene que ser SU viaje: calificar el viaje de otro inventaría
+  // reputación, que es el activo del que depende todo lo demás.
+  const trip = findTrip(booking.trip_id);
+  const mine =
+    auth.user.role === 'driver'
+      ? trip?.driver.id === (driverIdFor(auth.user) || auth.user.id)
+      : booking.passenger_id === auth.user.id;
+  if (!trip || !mine) {
+    return NextResponse.json({ error: 'Reserva no encontrada' }, { status: 404 });
+  }
+
   if (booking.status !== 'completed') {
     return NextResponse.json(
       { error: 'Solo se puede calificar un viaje finalizado' },
@@ -49,8 +81,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const trip = findTrip(booking.trip_id);
-  const driverName = trip?.driver.name || 'Conductor';
+  const driverName = trip.driver.name;
 
   const review = {
     id: nextId('r'),

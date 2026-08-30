@@ -1,6 +1,5 @@
-import { redirect } from 'next/navigation';
 import { identityFor, displayPhone } from '../../lib/auth';
-import { currentUser } from '../../lib/session';
+import { requireUser } from '../../lib/guard';
 import TopBar from '../TopBar';
 import BottomNav from '../BottomNav';
 import IdentityForm from './IdentityForm';
@@ -14,15 +13,13 @@ import IdentityForm from './IdentityForm';
  * hace que acepte la solicitud. Es producto, no burocracia.
  */
 export default async function Verificacion() {
-  const user = await currentUser();
-  if (!user) redirect('/entrar?next=/verificacion');
-  if (!user.name) redirect('/entrar');
+  const user = await requireUser('/verificacion');
 
   const check = identityFor(user.id);
 
   return (
     <>
-      <TopBar title="Verificar mi identidad" back="/mis-viajes" />
+      <TopBar title="Verificar mi identidad" back="/cuenta" />
       <main className="screen" id="contenido">
         <div className="verif-state">
           <div className={`verif-badge state-${check.status}`}>
@@ -104,7 +101,7 @@ export default async function Verificacion() {
           </ul>
         </div>
       </main>
-      <BottomNav current="mis-viajes" passenger={user.id} />
+      <BottomNav current="cuenta" user={user} />
     </>
   );
 }

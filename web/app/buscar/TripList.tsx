@@ -1,8 +1,8 @@
-import type { Trip } from '../lib/data';
-import { freeSeats, ratingFor } from '../lib/store';
-import Avatar from './Avatar';
-import Stars from './Stars';
-import FareBadge from './FareBadge';
+import type { Trip } from '../../lib/data';
+import { freeSeats, ratingFor } from '../../lib/store';
+import Avatar from '../Avatar';
+import Stars from '../Stars';
+import FareBadge from '../FareBadge';
 
 function fmtDuration(min: number): string {
   if (min < 60) return `${min} min`;

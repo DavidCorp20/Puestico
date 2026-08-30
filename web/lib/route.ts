@@ -166,3 +166,48 @@ export function suggestedPrice(originName: string, destinationName: string): num
   const km = routeDistanceKm(buildRoute(originName, destinationName));
   return Math.max(2, Math.round(km * 0.35 * 2) / 2);
 }
+
+// ─── Geometría real de las carreteras ──────────────────────────────
+
+import { GEOMETRY } from './geometry';
+
+/**
+ * Trazado real de la carretera entre dos zonas, con sus curvas.
+ *
+ * Sale de `lib/geometry.json`, que se genera con
+ * `node scripts/fetch-routes.mjs` a partir de OSRM (datos de
+ * OpenStreetMap). Queda en un archivo a propósito: el mapa no debe
+ * depender de que un servicio externo responda, las rutas del corredor
+ * no cambian de un día para otro, y así no hay ni una llamada de red en
+ * tiempo de ejecución.
+ *
+ * Devuelve null si ese par no está descargado — quien llama dibuja
+ * entonces la línea recta entre paradas, que es el comportamiento
+ * anterior.
+ */
+export interface RoadLine {
+  km: number;
+  minutes: number;
+  /** Pares [lng, lat] a lo largo de la carretera. */
+  line: [number, number][];
+}
+
+const GEO = GEOMETRY;
+
+export function roadLine(originName: string, destinationName: string): RoadLine | null {
+  const a = zoneByName(originName);
+  const b = zoneByName(destinationName);
+  if (!a || !b) return null;
+
+  const direct = GEO[`${a.id}|${b.id}`];
+  if (direct) return direct;
+
+  // Si tenemos el sentido contrario, sirve invertido: la carretera es
+  // la misma y para dibujar un mapa la diferencia no se nota.
+  const reverse = GEO[`${b.id}|${a.id}`];
+  if (reverse) {
+    return { ...reverse, line: [...reverse.line].reverse() };
+  }
+
+  return null;
+}

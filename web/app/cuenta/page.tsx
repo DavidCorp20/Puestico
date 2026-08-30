@@ -1,6 +1,5 @@
-import { redirect } from 'next/navigation';
 import { identityFor, displayPhone } from '../../lib/auth';
-import { currentUser } from '../../lib/session';
+import { requireUser, homeFor } from '../../lib/guard';
 import { bookingsForPassenger, ratingFor } from '../../lib/store';
 import { computeFare } from '../../lib/fare';
 import { findTrip } from '../../lib/store';
@@ -9,6 +8,7 @@ import BottomNav from '../BottomNav';
 import Avatar from '../Avatar';
 import Stars from '../Stars';
 import LogoutButton from './LogoutButton';
+import RoleSwitch from './RoleSwitch';
 
 /**
  * Mi cuenta.
@@ -19,9 +19,7 @@ import LogoutButton from './LogoutButton';
  * ($0,60/km) menos lo que realmente pagó.
  */
 export default async function Cuenta() {
-  const user = await currentUser();
-  if (!user) redirect('/entrar?next=/cuenta');
-  if (!user.name) redirect('/entrar');
+  const user = await requireUser('/cuenta');
 
   const check = identityFor(user.id);
   const bookings = bookingsForPassenger(user.id).filter(
@@ -43,7 +41,7 @@ export default async function Cuenta() {
 
   return (
     <>
-      <TopBar title="Mi cuenta" back="/" />
+      <TopBar title="Mi cuenta" back={homeFor(user)} />
       <main className="screen" id="contenido">
         <div className="me-hero">
           <Avatar name={user.name} size={64} />
@@ -62,7 +60,7 @@ export default async function Cuenta() {
           )}
         </div>
 
-        {bookings.length > 0 && (
+        {user.role === 'passenger' && bookings.length > 0 && (
           <div className="save-card">
             <span className="save-label">Has ahorrado</span>
             <strong className="save-amount">${ahorro.toFixed(2)}</strong>
@@ -93,19 +91,45 @@ export default async function Cuenta() {
           )}
         </div>
 
+        {/* Cambiar de rol sin crear otra cuenta: el mismo teléfono,
+            la otra app. Es lo que evita que alguien con carro se
+            registre dos veces. */}
+        <div className="card">
+          <h2>Cómo estás usando Puestico</h2>
+          <div className={`role-current role-${user.role}`}>
+            <span className="rc-badge">
+              {user.role === 'driver' ? '🚗' : '🎫'}
+            </span>
+            <span className="rc-text">
+              <strong>
+                {user.role === 'driver' ? 'Como conductor' : 'Como pasajero'}
+              </strong>
+              <small>
+                {user.role === 'driver'
+                  ? 'Publicas viajes y recibes solicitudes.'
+                  : 'Buscas y reservas puestos.'}
+              </small>
+            </span>
+          </div>
+          <RoleSwitch role={user.role} />
+        </div>
+
         <div className="stack">
           <a className="btn btn-ghost" href="/verificacion">
             {check.status === 'approved'
               ? 'Ver mi verificación'
               : 'Verificar mi identidad'}
           </a>
-          <a className="btn btn-ghost" href="/mis-viajes">
-            Mis viajes
+          <a
+            className="btn btn-ghost"
+            href={user.role === 'driver' ? '/conductor/historial' : '/mis-viajes'}
+          >
+            {user.role === 'driver' ? 'Mi historial' : 'Mis viajes'}
           </a>
           <LogoutButton />
         </div>
       </main>
-      <BottomNav current="mis-viajes" passenger={user.id} />
+      <BottomNav current="cuenta" user={user} />
     </>
   );
 }

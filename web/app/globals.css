@@ -3814,3 +3814,521 @@ a.ride-card:hover { border-color: var(--border-strong); }
 .bs-grid.single {
   grid-template-columns: 1fr;
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   RONDA 10 — Roles separados, navegación y mapa real
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ─── Mapa con mosaicos reales de OpenStreetMap ───────────────────── */
+
+/* El lienzo apila mosaicos y el trazado encima. `position:relative` y
+   overflow hidden recortan los mosaicios que sobresalen del recuadro. */
+.map-canvas {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-soft);
+  background: #0d1319;
+}
+
+.map-tiles {
+  position: absolute;
+  inset: 0;
+}
+
+.map-tiles img {
+  position: absolute;
+  display: block;
+  /* Los mosaicos de OSM son claros y la app es oscura: bajarles el
+     brillo y la saturación los integra sin volverlos ilegibles, y hace
+     que la línea verde resalte. */
+  filter: brightness(0.62) saturate(0.72) contrast(1.06);
+  /* Sin esto se ven costuras de 1px entre mosaicos al escalar. */
+  outline: 1px solid transparent;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* El SVG va encima de los mosaicos, transparente. */
+.map-canvas .map-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: none;
+  border: none;
+  border-radius: 0;
+}
+
+/* Las etiquetas necesitan contorno para leerse sobre el mapa. */
+.map-canvas .map-label {
+  fill: #fff;
+  font-size: 10.5px;
+  font-weight: 650;
+  paint-order: stroke;
+  stroke: rgba(9, 13, 18, 0.85);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+
+.map-credit {
+  position: absolute;
+  right: 5px;
+  bottom: 4px;
+  background: rgba(9, 13, 18, 0.62);
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.6rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-decoration: none;
+  backdrop-filter: blur(2px);
+}
+
+.map-real {
+  color: var(--accent-text);
+  font-style: normal;
+  font-weight: 600;
+}
+
+.map-scrub {
+  flex: 1;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.map-progress-facts {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 11px;
+  padding-top: 11px;
+  border-top: 1px solid var(--border-soft);
+}
+
+.map-progress-facts span {
+  display: flex;
+  flex-direction: column;
+  color: var(--muted);
+  font-size: 0.74rem;
+  text-align: center;
+}
+
+.map-progress-facts strong {
+  color: var(--text);
+  font-size: 1.02rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── Elección de rol al registrarse ─────────────────────────────── */
+
+.role-ask {
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.88rem;
+  margin: 0 0 12px;
+}
+
+.role-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+
+/* Tarjetas grandes, no un desplegable: la decisión define qué app usa
+   la persona, así que merece el espacio y el toque cómodo. */
+.role-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  background: var(--surface-2);
+  border: 1.5px solid var(--line);
+  border-radius: 16px;
+  padding: 17px 16px;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, transform 0.1s;
+}
+
+.role-card:active {
+  transform: scale(0.985);
+}
+
+.role-card:hover,
+.role-card:focus-visible {
+  border-color: var(--accent);
+  background: rgba(34, 197, 94, 0.06);
+}
+
+.rc-emoji {
+  font-size: 1.8rem;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+
+.role-card strong {
+  font-size: 1.04rem;
+}
+
+.role-card small {
+  color: var(--muted);
+  font-size: 0.83rem;
+  line-height: 1.5;
+}
+
+.rc-go {
+  color: var(--accent-text);
+  font-size: 0.83rem;
+  font-weight: 650;
+  margin-top: 6px;
+}
+
+/* Sello del rol elegido, arriba del paso del teléfono. */
+.role-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 5px 6px 5px 13px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  margin-bottom: 14px;
+}
+
+.role-chip-change {
+  background: rgba(255, 255, 255, 0.06);
+  border: none;
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 0.74rem;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+
+.role-chip-change:hover {
+  color: var(--accent-text);
+}
+
+/* Confirmación del rol en el paso del nombre, y estado en Mi cuenta. */
+.role-confirm,
+.role-current {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+}
+
+.role-confirm .rc-badge,
+.role-current .rc-badge {
+  font-size: 1.4rem;
+}
+
+.rc-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rc-text strong {
+  font-size: 0.92rem;
+}
+
+.rc-text small {
+  color: var(--muted);
+  font-size: 0.79rem;
+  line-height: 1.4;
+}
+
+.rc-change {
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.rc-change:hover {
+  color: var(--accent-text);
+  border-color: var(--accent);
+}
+
+/* ─── Bandeja de mensajes ─────────────────────────────────────────── */
+
+.chat-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px 13px;
+  margin-bottom: 9px;
+  text-decoration: none;
+  transition: border-color 0.15s, transform 0.1s;
+}
+
+.chat-item:active {
+  transform: scale(0.995);
+}
+
+/* Sin leer: borde de acento y texto pleno. La diferencia tiene que
+   notarse de reojo, sin comparar. */
+.chat-item.unread {
+  border-color: rgba(34, 197, 94, 0.45);
+  background: rgba(34, 197, 94, 0.05);
+}
+
+.ci-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ci-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ci-top strong {
+  font-size: 0.94rem;
+  color: var(--text);
+}
+
+.ci-time {
+  color: var(--muted-2);
+  font-size: 0.72rem;
+  flex-shrink: 0;
+}
+
+.ci-route {
+  color: var(--muted-2);
+  font-size: 0.76rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ci-last {
+  color: var(--muted);
+  font-size: 0.84rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chat-item.unread .ci-last {
+  color: var(--text);
+  font-weight: 550;
+}
+
+.ci-you {
+  color: var(--muted-2);
+  font-style: normal;
+}
+
+.ci-none {
+  font-style: italic;
+  color: var(--muted-2);
+}
+
+.ci-badge {
+  min-width: 21px;
+  height: 21px;
+  display: grid;
+  place-items: center;
+  background: var(--accent);
+  color: var(--on-accent);
+  border-radius: 999px;
+  font-size: 0.73rem;
+  font-weight: 700;
+  padding: 0 6px;
+  flex-shrink: 0;
+}
+
+.ci-closed {
+  color: var(--muted-2);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+}
+
+/* ─── Avisos del panel del conductor ─────────────────────────────── */
+
+/* Viaje en curso: lo único que importa si está manejando. */
+.live-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.32);
+  border-radius: 14px;
+  padding: 13px 15px;
+  margin-bottom: 12px;
+  text-decoration: none;
+}
+
+.lb-pulse {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+  animation: lb-blink 1.6s ease-in-out infinite;
+}
+
+@keyframes lb-blink {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.45; transform: scale(0.82); }
+}
+
+.lb-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.lb-body strong {
+  font-size: 0.93rem;
+  color: var(--accent-text);
+}
+
+.lb-body small {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.lb-go,
+.ab-go {
+  color: var(--accent-text);
+  font-size: 0.85rem;
+  font-weight: 650;
+}
+
+/* Solicitudes sin responder: alguien está esperando del otro lado. */
+.alert-banner {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  background: rgba(234, 179, 8, 0.09);
+  border: 1px solid rgba(234, 179, 8, 0.34);
+  border-radius: 14px;
+  padding: 13px 15px;
+  margin-bottom: 12px;
+  text-decoration: none;
+}
+
+.ab-count {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  background: #EAB308;
+  color: #0F1419;
+  border-radius: 50%;
+  font-weight: 800;
+  font-size: 0.95rem;
+  flex-shrink: 0;
+}
+
+.ab-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.ab-body strong {
+  font-size: 0.9rem;
+}
+
+.ab-body small {
+  color: var(--muted);
+  font-size: 0.79rem;
+  line-height: 1.4;
+}
+
+.ab-go {
+  color: #EAB308;
+  font-size: 1.15rem;
+}
+
+.publish-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+}
+
+.inline-warn {
+  display: inline-block;
+  background: rgba(234, 179, 8, 0.16);
+  color: #EAB308;
+  border-radius: 5px;
+  font-size: 0.7rem;
+  font-weight: 650;
+  padding: 2px 6px;
+  margin-left: 7px;
+}
+
+.link-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 13px 15px;
+  text-decoration: none;
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.lr-go {
+  color: var(--accent-text);
+  font-size: 0.83rem;
+  font-weight: 650;
+}
+
+/* ─── Móvil ───────────────────────────────────────────────────────── */
+
+@media (max-width: 560px) {
+  .role-card {
+    padding: 15px 14px;
+  }
+
+  .rc-emoji {
+    font-size: 1.6rem;
+  }
+
+  .map-canvas .map-label {
+    font-size: 11.5px;
+  }
+
+  .map-progress-facts strong {
+    font-size: 0.94rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lb-pulse {
+    animation: none;
+  }
+}

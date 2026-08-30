@@ -79,7 +79,7 @@ export default function PublishForm({ driverId }: { driverId: string }) {
       setBusy(false);
       return;
     }
-    window.location.href = `/conductor?driver=${driverId}`;
+    window.location.href = '/conductor';
   }
 
   return (

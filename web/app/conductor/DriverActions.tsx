@@ -26,7 +26,7 @@ export default function DriverActions({
       setBusy('');
       return;
     }
-    window.location.href = `/conductor?driver=${driverId}`;
+    window.location.href = '/conductor/solicitudes';
   }
 
   return (

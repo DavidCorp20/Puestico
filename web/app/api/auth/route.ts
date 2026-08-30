@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { requestOtp, verifyOtp, updateUser, revokeSession, SESSION_COOKIE, cookieOptions, displayPhone } from '../../../lib/auth';
 import { currentUser } from '../../../lib/session';
 import { TEST_DRIVERS } from '../../../lib/data';
+import { homeFor } from '../../../lib/guard';
 
 /**
  * Inicio de sesión por teléfono.
@@ -33,6 +34,9 @@ export async function POST(request: Request) {
       ok: true,
       is_new: res.is_new,
       needs_name: !res.user.name,
+      // El rol GUARDADO decide a dónde entra, no el que tocó en la
+      // pantalla: si ya tenía cuenta de conductor, va a su panel.
+      home: res.user.name ? homeFor(res.user) : null,
       user: {
         id: res.user.id,
         name: res.user.name,
@@ -64,7 +68,35 @@ export async function POST(request: Request) {
       role === 'driver' && !user.driver_ref ? TEST_DRIVERS[0].id : undefined;
 
     updateUser(user.id, { name, role, driver_ref: driverRef });
-    return NextResponse.json({ ok: true, name, role });
+    return NextResponse.json({
+      ok: true,
+      name,
+      role,
+      home: homeFor({ role }),
+    });
+  }
+
+  // Cambiar de rol: el mismo teléfono, la otra app. Necesita sesión y
+  // solo puede cambiar el rol de UNO MISMO — el id sale de la sesión.
+  if (action === 'switch-role') {
+    const user = await currentUser();
+    if (!user) return NextResponse.json({ error: 'No hay sesión' }, { status: 401 });
+
+    const role = body.role === 'driver' ? 'driver' : 'passenger';
+    if (role === user.role) {
+      return NextResponse.json(
+        { error: `Ya estás usando Puestico como ${role === 'driver' ? 'conductor' : 'pasajero'}.` },
+        { status: 400 },
+      );
+    }
+
+    // Al pasar a conductor por primera vez necesita un perfil con el
+    // que publicar. Ver la nota del alta más arriba.
+    const driverRef =
+      role === 'driver' && !user.driver_ref ? TEST_DRIVERS[0].id : undefined;
+
+    updateUser(user.id, { role, driver_ref: driverRef });
+    return NextResponse.json({ ok: true, role, home: homeFor({ role }) });
   }
 
   if (action === 'logout') {

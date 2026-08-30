@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { quote } from '../../../lib/fare';
-import { currentUser } from '../../../lib/session';
+import { apiUser } from '../../../lib/guard';
 import {
   findTrip,
   nextId,
@@ -36,19 +36,16 @@ export async function POST(request: Request) {
   // inventado y la creaba a nombre de otra persona con un 201. La
   // causa era aceptar la identidad desde el cliente. Ahora la resuelve
   // el servidor y el agujero desaparece por construcción.
-  const user = await currentUser();
-  if (!user) {
+  // Reservar es exclusivo del rol pasajero: un conductor no reserva
+  // puestos, publica viajes. La API lo rechaza, no solo la pantalla.
+  const auth = await apiUser('passenger');
+  if (!auth.ok) {
     return NextResponse.json(
-      { error: 'Inicia sesión para reservar tu puesto.', code: 'AUTH_REQUIRED' },
-      { status: 401 },
+      { error: auth.error, code: auth.code },
+      { status: auth.status },
     );
   }
-  if (!user.name) {
-    return NextResponse.json(
-      { error: 'Completa tu nombre antes de reservar.', code: 'PROFILE_INCOMPLETE' },
-      { status: 403 },
-    );
-  }
+  const user = auth.user;
 
   // Modo demo: permite provocar a mano un pago rechazado, para poder
   // mostrar el camino de error y no solo el camino feliz.
@@ -123,10 +120,14 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   const { booking_id, method, simulate } = await request.json();
 
-  const user = await currentUser();
-  if (!user) {
-    return NextResponse.json({ error: 'Inicia sesión.' }, { status: 401 });
+  const auth = await apiUser('passenger');
+  if (!auth.ok) {
+    return NextResponse.json(
+      { error: auth.error, code: auth.code },
+      { status: auth.status },
+    );
   }
+  const user = auth.user;
 
   const booking = getBooking(booking_id);
   if (!booking) {

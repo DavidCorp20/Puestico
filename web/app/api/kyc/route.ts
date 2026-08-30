@@ -12,13 +12,22 @@ import { kycFor, setKyc, allKyc } from '../../../lib/store';
  * acá alcanza para mostrar el recorrido del conductor nuevo.
  */
 import { REQUIRED_DOCUMENTS as REQUIRED } from '../../../lib/kyc';
+import { apiUser } from '../../../lib/guard';
+import { driverIdFor } from '../../../lib/auth';
 
 export async function POST(request: Request) {
-  const { action, driver_id, documents } = await request.json();
+  const { action, documents } = await request.json();
 
-  if (!driver_id) {
-    return NextResponse.json({ error: 'Falta el conductor' }, { status: 400 });
+  // El alta es del conductor de la SESIÓN: si el id viniera del cuerpo,
+  // cualquiera podría aprobar o rechazar el alta de otro.
+  const auth = await apiUser('driver');
+  if (!auth.ok) {
+    return NextResponse.json(
+      { error: auth.error, code: auth.code },
+      { status: auth.status },
+    );
   }
+  const driver_id = driverIdFor(auth.user) || auth.user.id;
 
   if (action === 'submit') {
     const docs: string[] = Array.isArray(documents) ? documents : [];

@@ -1,7 +1,6 @@
 import { metrics } from '../../lib/metrics';
 import { computeFare, passengerSavings, FARE } from '../../lib/fare';
 import Logo from '../Logo';
-import BottomNav from '../BottomNav';
 
 export const metadata = {
   title: 'Puestico — Alguien ya va para allá. Móntate.',
@@ -180,7 +179,6 @@ export default function Inicio() {
         </div>
       </section>
     </main>
-    <BottomNav current="buscar" />
     </>
   );
 }

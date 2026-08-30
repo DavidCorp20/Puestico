@@ -12,6 +12,8 @@ import {
 } from '../../../lib/store';
 import { driverById } from '../../../lib/data';
 import { computeFare, validatePrice } from '../../../lib/fare';
+import { apiUser } from '../../../lib/guard';
+import { driverIdFor } from '../../../lib/auth';
 
 /**
  * Acciones del conductor sobre reservas y viajes.
@@ -24,10 +26,23 @@ export async function POST(request: Request) {
   const body = await request.json();
   const { action } = body;
 
+  // Todo lo de acá es exclusivo del rol conductor, y el conductor sale
+  // de la SESIÓN. Antes se leía `driver_id` del cuerpo del pedido, que
+  // es el mismo agujero que tenía la reserva con el pasajero: cualquiera
+  // podía publicar viajes o aceptar solicitudes en nombre de otro.
+  const auth = await apiUser('driver');
+  if (!auth.ok) {
+    return NextResponse.json(
+      { error: auth.error, code: auth.code },
+      { status: auth.status },
+    );
+  }
+  const myDriverId = driverIdFor(auth.user) || auth.user.id;
+
   // ─── Publicar un viaje nuevo ──────────────────────────────
   if (action === 'publish') {
-    const { driver_id, origin, destination, date, time, seats, price } = body;
-    const driver = driverById(driver_id);
+    const { origin, destination, date, time, seats, price } = body;
+    const driver = driverById(myDriverId);
     if (!driver) {
       return NextResponse.json({ error: 'Conductor no encontrado' }, { status: 404 });
     }
@@ -96,6 +111,13 @@ export async function POST(request: Request) {
     if (!booking) {
       return NextResponse.json({ error: 'Reserva no encontrada' }, { status: 404 });
     }
+    // La reserva tiene que pertenecer a un viaje MÍO. Sin esto, un
+    // conductor acepta o rechaza solicitudes de los viajes de otro.
+    const ownTrip = findTrip(booking.trip_id);
+    if (!ownTrip || ownTrip.driver.id !== myDriverId) {
+      return NextResponse.json({ error: 'Reserva no encontrada' }, { status: 404 });
+    }
+
     if (booking.status !== 'pending') {
       return NextResponse.json(
         { error: `La reserva ya está ${booking.status}` },
@@ -104,7 +126,7 @@ export async function POST(request: Request) {
     }
 
     if (action === 'accept') {
-      const trip = findTrip(booking.trip_id);
+      const trip = ownTrip;
       if (trip && booking.seats > trip.seats_available) {
         return NextResponse.json({ error: 'Ya no hay puestos' }, { status: 409 });
       }
@@ -120,6 +142,10 @@ export async function POST(request: Request) {
   if (action === 'start' || action === 'finish') {
     const trip = findTrip(body.trip_id);
     if (!trip) {
+      return NextResponse.json({ error: 'Viaje no encontrado' }, { status: 404 });
+    }
+    // Arrancar o cerrar el viaje de otro conductor movería su dinero.
+    if (trip.driver.id !== myDriverId) {
       return NextResponse.json({ error: 'Viaje no encontrado' }, { status: 404 });
     }
 

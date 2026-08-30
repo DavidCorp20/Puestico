@@ -20,7 +20,7 @@ import Logo from '../Logo';
  *   descuido: sin proveedor de mensajería conectado, esconderlo haría
  *   la demo imposible de probar. Va rotulado como demo.
  */
-type Step = 'phone' | 'code' | 'name';
+type Step = 'role' | 'phone' | 'code' | 'name';
 
 export default function LoginFlow({
   next,
@@ -29,7 +29,10 @@ export default function LoginFlow({
   next: string;
   needsName: boolean;
 }) {
-  const [step, setStep] = useState<Step>(needsName ? 'name' : 'phone');
+  // El rol se elige PRIMERO, antes del teléfono: David pidió que el
+  // registro decida desde el arranque si entras como pasajero o como
+  // conductor, porque los dos ven apps distintas.
+  const [step, setStep] = useState<Step>(needsName ? 'name' : 'role');
   const [phone, setPhone] = useState('');
   const [digits, setDigits] = useState<string[]>(Array(6).fill(''));
   const [name, setName] = useState('');
@@ -99,12 +102,15 @@ export default function LoginFlow({
       boxes.current[0]?.focus();
       return;
     }
-    // Primera vez: falta el nombre. Ya conocido: adentro.
+    // Primera vez: falta el nombre. Ya conocido: a su casa.
     if (data.needs_name) {
       setStep('name');
       return;
     }
-    window.location.href = next;
+    // El rol guardado manda sobre el que eligió en la pantalla: si ya
+    // tenía cuenta de conductor, entra como conductor aunque haya
+    // tocado "busco puesto".
+    window.location.href = data.home || next;
   }
 
   async function saveName() {
@@ -116,7 +122,9 @@ export default function LoginFlow({
       setError(data.error || 'No se pudo guardar tu nombre.');
       return;
     }
-    window.location.href = role === 'driver' ? '/conductor' : next;
+    // Cada rol a su casa. `next` solo se respeta si el usuario venía de
+    // una pantalla concreta que su rol puede ver.
+    window.location.href = role === 'driver' ? '/conductor' : next || '/buscar';
   }
 
   function setDigit(i: number, value: string) {
@@ -152,15 +160,87 @@ export default function LoginFlow({
     }
   }
 
-  // ─── Paso 1: teléfono ───────────────────────────────────
-  if (step === 'phone') {
+  // ─── Paso 0: ¿pasajero o conductor? ─────────────────────
+  //
+  // Va primero a propósito. Las dos apps son distintas, así que
+  // preguntarlo al final (después del teléfono y del código) obligaba
+  // a rehacer el camino mental. Acá el usuario declara qué viene a
+  // hacer y todo lo demás se acomoda.
+  if (step === 'role') {
     return (
       <div className="auth-wrap fade-in">
         <div className="auth-hero">
           <Logo size={54} />
           <h1 className="auth-title">Alguien ya va para allá</h1>
           <p className="auth-sub">
-            Entra con tu teléfono. Sin contraseñas que recordar.
+            Reserva el puesto libre de un carro que ya iba a salir.
+          </p>
+        </div>
+
+        <p className="role-ask">¿Cómo vas a usar Puestico?</p>
+
+        <div className="role-cards">
+          <button
+            type="button"
+            className="role-card"
+            onClick={() => {
+              setRole('passenger');
+              setStep('phone');
+            }}
+          >
+            <span className="rc-emoji">🎫</span>
+            <strong>Busco puesto</strong>
+            <small>
+              Necesito llegar a algún lado y quiero pagar menos que un taxi.
+            </small>
+            <span className="rc-go">Entrar como pasajero →</span>
+          </button>
+
+          <button
+            type="button"
+            className="role-card"
+            onClick={() => {
+              setRole('driver');
+              setStep('phone');
+            }}
+          >
+            <span className="rc-emoji">🚗</span>
+            <strong>Tengo carro</strong>
+            <small>
+              Ya hago el viaje y quiero recuperar la gasolina llenando los
+              puestos vacíos.
+            </small>
+            <span className="rc-go">Entrar como conductor →</span>
+          </button>
+        </div>
+
+        <p className="auth-legal">
+          Puestico conecta particulares que comparten los gastos de un viaje
+          que ya iban a hacer. Puedes cambiar de rol después desde tu cuenta.
+        </p>
+      </div>
+    );
+  }
+
+  // ─── Paso 1: teléfono ───────────────────────────────────
+  if (step === 'phone') {
+    return (
+      <div className="auth-wrap fade-in">
+        <div className="auth-hero">
+          <span className={`role-chip role-${role}`}>
+            {role === 'driver' ? '🚗 Conductor' : '🎫 Pasajero'}
+            <button
+              type="button"
+              className="role-chip-change"
+              onClick={() => setStep('role')}
+            >
+              cambiar
+            </button>
+          </span>
+          <h1 className="auth-title">Entra con tu teléfono</h1>
+          <p className="auth-sub">
+            Sin contraseñas que recordar. Te confirmamos que eres tú con un
+            código.
           </p>
         </div>
 
@@ -210,8 +290,7 @@ export default function LoginFlow({
         </form>
 
         <p className="auth-legal">
-          Puestico conecta particulares que comparten los gastos de un viaje
-          que ya iban a hacer. Al continuar aceptas los términos de uso.
+          Al continuar aceptas los términos de uso.
         </p>
       </div>
     );
@@ -305,7 +384,9 @@ export default function LoginFlow({
         <div className="auth-icon">👋</div>
         <h1 className="auth-title">¿Cómo te llamas?</h1>
         <p className="auth-sub">
-          Es lo que ve la otra persona antes de subirse al carro contigo.
+          {role === 'driver'
+            ? 'Es lo que ve el pasajero antes de reservar tu puesto.'
+            : 'Es lo que ve el conductor antes de aceptarte en su carro.'}
         </p>
       </div>
 
@@ -329,31 +410,28 @@ export default function LoginFlow({
           />
         </div>
 
-        <div className="field">
-          <label>¿Qué vas a hacer en Puestico?</label>
-          <div className="choice-row">
-            <button
-              type="button"
-              className={`choice ${role === 'passenger' ? 'on' : ''}`}
-              onClick={() => setRole('passenger')}
-            >
-              <span className="choice-emoji">🎫</span>
-              <strong>Busco puesto</strong>
-              <small>Viajo con alguien que ya va</small>
-            </button>
-            <button
-              type="button"
-              className={`choice ${role === 'driver' ? 'on' : ''}`}
-              onClick={() => setRole('driver')}
-            >
-              <span className="choice-emoji">🚗</span>
-              <strong>Tengo carro</strong>
-              <small>Ofrezco los puestos libres</small>
-            </button>
-          </div>
-          <small className="field-hint">
-            Puedes hacer las dos cosas — esto solo define con qué empiezas.
-          </small>
+        {/* El rol ya se eligió al principio; acá solo se confirma. */}
+        <div className={`role-confirm role-${role}`}>
+          <span className="rc-badge">
+            {role === 'driver' ? '🚗' : '🎫'}
+          </span>
+          <span className="rc-text">
+            <strong>
+              Te registras como {role === 'driver' ? 'conductor' : 'pasajero'}
+            </strong>
+            <small>
+              {role === 'driver'
+                ? 'Vas a publicar viajes y recibir solicitudes.'
+                : 'Vas a buscar y reservar puestos.'}
+            </small>
+          </span>
+          <button
+            type="button"
+            className="rc-change"
+            onClick={() => setStep('role')}
+          >
+            Cambiar
+          </button>
         </div>
 
         {error && (

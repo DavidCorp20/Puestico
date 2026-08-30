@@ -2,7 +2,6 @@ import { metrics } from '../../lib/metrics';
 import { FARE } from '../../lib/fare';
 import GrowthChart from './GrowthChart';
 import TopBar from '../TopBar';
-import BottomNav from '../BottomNav';
 
 export const metadata = {
   title: 'Puestico — Métricas del negocio',
@@ -173,7 +172,6 @@ export default function Metricas() {
         <a className="btn btn-ghost" href="/inicio">Ver la propuesta</a>
       </div>
       </main>
-      <BottomNav current="metricas" />
     </>
   );
 }

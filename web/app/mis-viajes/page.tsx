@@ -1,6 +1,5 @@
-import { redirect } from 'next/navigation';
 import { identityFor } from '../../lib/auth';
-import { currentUser } from '../../lib/session';
+import { requirePassenger } from '../../lib/guard';
 import {
   bookingsForPassenger,
   findTrip,
@@ -28,13 +27,9 @@ const LABEL: Record<string, string> = {
 };
 
 export default async function MisViajes() {
-  // La identidad sale de la sesión, no de la barra de direcciones.
-  // Antes se elegía el pasajero con un selector: útil para probar,
-  // inaceptable en cuanto hay cuentas reales.
-  const user = await currentUser();
-  if (!user) redirect('/entrar?next=/mis-viajes');
-  if (!user.name) redirect('/entrar');
-
+  // Pantalla de pasajero: la identidad sale de la sesión y un
+  // conductor que caiga acá se va a su panel.
+  const user = await requirePassenger('/mis-viajes');
   const passenger = user;
   const verified = identityFor(user.id).status === 'approved';
   const bookings = bookingsForPassenger(passenger.id).reverse();
@@ -251,7 +246,7 @@ export default async function MisViajes() {
         );
       })}
       </main>
-      <BottomNav current="mis-viajes" passenger={passenger.id} />
+      <BottomNav current="mis-viajes" user={user} />
     </>
   );
 }

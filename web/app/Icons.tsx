@@ -1,7 +1,7 @@
 /**
  * Iconos de la interfaz — trazo, 24×24, heredan el color.
  *
- * Dibujados a mano en vez de traer una librería de iconos: son ocho,
+ * Dibujados a mano en vez de traer una librería de iconos: son pocos,
  * pesan nada y así la barra inferior no depende de un paquete externo.
  * `stroke="currentColor"` los hace tomar el color del estado activo.
  */
@@ -115,6 +115,24 @@ export function IconUser({ size = 24 }: P) {
     <svg {...base(size)}>
       <circle cx="12" cy="8.5" r="3.8" />
       <path d="M4.5 20c0-3.6 3.4-5.8 7.5-5.8s7.5 2.2 7.5 5.8" />
+    </svg>
+  );
+}
+
+/** Burbuja de conversación — la pestaña de mensajes. */
+export function IconChat({ size = 24 }: P) {
+  return (
+    <svg {...base(size)}>
+      <path d="M20.5 12c0 4-3.8 7.2-8.5 7.2-1 0-2-.15-2.9-.42L4.5 20.5l1.3-3.4C4.4 15.8 3.5 14 3.5 12c0-4 3.8-7.2 8.5-7.2s8.5 3.2 8.5 7.2Z" />
+    </svg>
+  );
+}
+
+/** Volante con destello — publicar un viaje nuevo. */
+export function IconPlus({ size = 24 }: P) {
+  return (
+    <svg {...base(size)}>
+      <path d="M12 5v14M5 12h14" />
     </svg>
   );
 }
