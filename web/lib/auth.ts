@@ -29,6 +29,27 @@ import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { db } from './db';
 
 export const SESSION_COOKIE = 'puestico_session';
+
+/**
+ * Acceso rápido: entrar sin código de verificación.
+ *
+ * **Es temporal y se quita apagando este interruptor.** Existe porque
+ * hoy WhatsApp no está conectado, así que sin esto no hay forma de
+ * entrar a la app para verla ni mostrarla.
+ *
+ * Está detrás de una variable de entorno a propósito, y no de un `if`
+ * suelto en la pantalla: el día que WhatsApp funcione se pone
+ * `PUESTICO_QUICK_ACCESS=0` y el atajo desaparece del servidor
+ * completo, no solo del botón. Un atajo de autenticación que se quita
+ * escondiendo un botón no se quitó.
+ *
+ * Lo que NO hace: no crea sesiones sin registrar el teléfono ni saltea
+ * la normalización. Crea una cuenta igual que las demás, solo se salta
+ * el paso de comprobar que el número es tuyo.
+ */
+export function quickAccessEnabled(): boolean {
+  return process.env.PUESTICO_QUICK_ACCESS !== '0';
+}
 const OTP_TTL_MIN = 10;
 const OTP_MAX_ATTEMPTS = 5;
 const SESSION_TTL_DAYS = 30;
@@ -210,6 +231,30 @@ export function verifyOtp(rawPhone: string, code: string): VerifyResult {
     row.id as string,
   );
 
+  const { user, isNew } = upsertUser(phone, nowIso);
+  const token = createSession(user.id);
+  return { ok: true, user, token, is_new: isNew };
+}
+
+/**
+ * Entra directo con un teléfono, sin código. Solo si el acceso rápido
+ * está habilitado — la comprobación se repite acá y no solo en la ruta
+ * de la API, para que no haya forma de llegar por otro camino.
+ */
+export function quickAccess(rawPhone: string): VerifyResult {
+  if (!quickAccessEnabled()) {
+    return { ok: false, error: 'El acceso rápido está desactivado.' };
+  }
+
+  const phone = normalizePhone(rawPhone);
+  if (!phone) {
+    return {
+      ok: false,
+      error: 'Ese número no parece venezolano. Escríbelo como 0412 123 4567.',
+    };
+  }
+
+  const nowIso = new Date().toISOString();
   const { user, isNew } = upsertUser(phone, nowIso);
   const token = createSession(user.id);
   return { ok: true, user, token, is_new: isNew };

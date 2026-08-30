@@ -1,6 +1,16 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { requestOtp, verifyOtp, updateUser, revokeSession, SESSION_COOKIE, cookieOptions, displayPhone } from '../../../lib/auth';
+import {
+  requestOtp,
+  verifyOtp,
+  quickAccess,
+  quickAccessEnabled,
+  updateUser,
+  revokeSession,
+  SESSION_COOKIE,
+  cookieOptions,
+  displayPhone,
+} from '../../../lib/auth';
 import { currentUser } from '../../../lib/session';
 import { TEST_DRIVERS } from '../../../lib/data';
 import { homeFor } from '../../../lib/guard';
@@ -8,10 +18,12 @@ import { homeFor } from '../../../lib/guard';
 /**
  * Inicio de sesión por teléfono.
  *
- * request → manda el código
- * verify  → lo valida, crea la sesión y pone la cookie
- * profile → completa el nombre la primera vez
- * logout  → revoca la sesión del lado servidor, no solo la cookie
+ * request     → manda el código
+ * verify      → lo valida, crea la sesión y pone la cookie
+ * quick       → entra sin código (TEMPORAL, ver lib/auth.ts)
+ * profile     → completa el nombre la primera vez
+ * switch-role → cambia entre pasajero y conductor
+ * logout      → revoca la sesión del lado servidor, no solo la cookie
  */
 export async function POST(request: Request) {
   const body = await request.json();
@@ -43,6 +55,23 @@ export async function POST(request: Request) {
         phone: displayPhone(res.user.phone),
         role: res.user.role,
       },
+    });
+  }
+
+  // Acceso rápido: entrar sin código. TEMPORAL — se apaga con
+  // PUESTICO_QUICK_ACCESS=0 y deja de existir en el servidor.
+  if (action === 'quick') {
+    const res = quickAccess(body.phone);
+    if (!res.ok || !res.token || !res.user) {
+      return NextResponse.json({ error: res.error }, { status: 403 });
+    }
+    const store = await cookies();
+    store.set(SESSION_COOKIE, res.token, cookieOptions());
+    return NextResponse.json({
+      ok: true,
+      is_new: res.is_new,
+      needs_name: !res.user.name,
+      home: res.user.name ? homeFor(res.user) : null,
     });
   }
 
@@ -115,7 +144,12 @@ export async function POST(request: Request) {
 /** Quién soy — lo usa el cliente para saber si mostrar el login. */
 export async function GET() {
   const user = await currentUser();
-  if (!user) return NextResponse.json({ authenticated: false });
+  if (!user) {
+    return NextResponse.json({
+      authenticated: false,
+      quick_access: quickAccessEnabled(),
+    });
+  }
   return NextResponse.json({
     authenticated: true,
     user: {

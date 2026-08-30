@@ -1,37 +1,51 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import Logo from '../Logo';
+import LogoMark from '../LogoMark';
 
 /**
- * Entrar con el teléfono, en tres pasos y sin contraseña.
+ * Entrar a Puestico.
  *
- * Decisiones de interfaz que valen más que el código:
+ * David dijo que estaba "muy básico" y tenía razón: era correcto y
+ * aburrido, que en la primera pantalla es lo peor que puede ser. Es lo
+ * único que ve alguien que todavía no confía en la app, así que acá se
+ * decide si parece un producto o un formulario.
  *
- * · **Un dato por pantalla.** Teléfono, después código, después
- *   nombre. Un formulario con todo junto se siente como un trámite;
- *   así se siente como una app.
+ * Lo que cambió y por qué:
  *
- * · **Los seis dígitos son seis casillas** con avance automático,
- *   pegado desde el portapapeles y borrado hacia atrás. Es el detalle
- *   que separa "hecho" de "hecho bien" en este flujo.
+ * · **Fondo con el corredor dibujado.** La montaña del Ávila y la ruta
+ *   Guatire–Caracas detrás del contenido. Cuenta de qué es la app antes
+ *   de leer una palabra, y es nuestro y no de una plantilla.
+ * · **Una prueba social concreta** en la primera pantalla: cuánto se
+ *   ahorra en la ruta principal. Un número real convence más que un
+ *   adjetivo.
+ * · **Ritmo.** Cada paso entra con un desplazamiento corto y los
+ *   elementos aparecen escalonados. Sin eso, cambiar de paso se siente
+ *   como recargar la página.
+ * · **Progreso visible.** Tres puntos arriba: la persona sabe cuánto
+ *   falta, que es lo que evita que abandone en el paso del código.
  *
- * · **El código se muestra en pantalla en modo demo.** No es un
- *   descuido: sin proveedor de mensajería conectado, esconderlo haría
- *   la demo imposible de probar. Va rotulado como demo.
+ * El acceso rápido (entrar sin código) es TEMPORAL y vive detrás de
+ * `PUESTICO_QUICK_ACCESS`; ver lib/auth.ts.
  */
 type Step = 'role' | 'phone' | 'code' | 'name';
+
+const STEP_INDEX: Record<Step, number> = { role: 0, phone: 1, code: 2, name: 2 };
+
+const QUICK_PASSENGER = [
+  '¿Dónde te espero?',
+  'Ya estoy en el punto',
+];
 
 export default function LoginFlow({
   next,
   needsName,
+  quickAccess,
 }: {
   next: string;
   needsName: boolean;
+  quickAccess: boolean;
 }) {
-  // El rol se elige PRIMERO, antes del teléfono: David pidió que el
-  // registro decida desde el arranque si entras como pasajero o como
-  // conductor, porque los dos ven apps distintas.
   const [step, setStep] = useState<Step>(needsName ? 'name' : 'role');
   const [phone, setPhone] = useState('');
   const [digits, setDigits] = useState<string[]>(Array(6).fill(''));
@@ -44,8 +58,6 @@ export default function LoginFlow({
 
   const boxes = useRef<Array<HTMLInputElement | null>>([]);
 
-  // Cuenta atrás para poder reenviar. Evita que el usuario machaque el
-  // botón y que nosotros gastemos mensajes de más.
   useEffect(() => {
     if (seconds <= 0) return;
     const t = setTimeout(() => setSeconds((s) => s - 1), 1000);
@@ -56,7 +68,6 @@ export default function LoginFlow({
     if (step === 'code') boxes.current[0]?.focus();
   }, [step]);
 
-  /** Formato venezolano mientras se escribe: 0412 123 4567 */
   function formatPhone(raw: string) {
     const d = raw.replace(/\D/g, '').slice(0, 11);
     if (d.length <= 4) return d;
@@ -91,6 +102,23 @@ export default function LoginFlow({
     }
   }
 
+  /** Entrar sin código. Temporal, ver la nota de arriba. */
+  async function enterWithoutCode() {
+    setLoading(true);
+    setError('');
+    const { ok, data } = await post({ action: 'quick', phone });
+    setLoading(false);
+    if (!ok) {
+      setError(data.error || 'No se pudo entrar.');
+      return;
+    }
+    if (data.needs_name) {
+      setStep('name');
+      return;
+    }
+    window.location.href = data.home || next;
+  }
+
   async function verify(code: string) {
     setLoading(true);
     setError('');
@@ -102,14 +130,10 @@ export default function LoginFlow({
       boxes.current[0]?.focus();
       return;
     }
-    // Primera vez: falta el nombre. Ya conocido: a su casa.
     if (data.needs_name) {
       setStep('name');
       return;
     }
-    // El rol guardado manda sobre el que eligió en la pantalla: si ya
-    // tenía cuenta de conductor, entra como conductor aunque haya
-    // tocado "busco puesto".
     window.location.href = data.home || next;
   }
 
@@ -122,14 +146,10 @@ export default function LoginFlow({
       setError(data.error || 'No se pudo guardar tu nombre.');
       return;
     }
-    // Cada rol a su casa. `next` solo se respeta si el usuario venía de
-    // una pantalla concreta que su rol puede ver.
-    window.location.href = role === 'driver' ? '/conductor' : next || '/buscar';
+    window.location.href = data.home || (role === 'driver' ? '/conductor' : '/buscar');
   }
 
   function setDigit(i: number, value: string) {
-    // Pegar los seis de una vez tiene que funcionar: es lo que hace
-    // cualquiera que copia el código del mensaje.
     const chars = value.replace(/\D/g, '');
     if (chars.length > 1) {
       const filled = Array(6).fill('');
@@ -150,8 +170,6 @@ export default function LoginFlow({
   }
 
   function onKeyDown(i: number, e: React.KeyboardEvent<HTMLInputElement>) {
-    // Retroceso en una casilla vacía salta a la anterior: sin esto,
-    // corregir un dígito obliga a usar el dedo.
     if (e.key === 'Backspace' && !digits[i] && i > 0) {
       boxes.current[i - 1]?.focus();
       const nextDigits = [...digits];
@@ -160,63 +178,86 @@ export default function LoginFlow({
     }
   }
 
+  /** Tres puntos de avance. Saber cuánto falta evita el abandono. */
+  const Progress = () => (
+    <div className="auth-steps" aria-hidden="true">
+      {[0, 1, 2].map((i) => (
+        <span
+          key={i}
+          className={`as-dot ${
+            i < STEP_INDEX[step] ? 'done' : i === STEP_INDEX[step] ? 'on' : ''
+          }`}
+        />
+      ))}
+    </div>
+  );
+
   // ─── Paso 0: ¿pasajero o conductor? ─────────────────────
-  //
-  // Va primero a propósito. Las dos apps son distintas, así que
-  // preguntarlo al final (después del teléfono y del código) obligaba
-  // a rehacer el camino mental. Acá el usuario declara qué viene a
-  // hacer y todo lo demás se acomoda.
   if (step === 'role') {
     return (
-      <div className="auth-wrap fade-in">
-        <div className="auth-hero">
-          <Logo size={54} />
-          <h1 className="auth-title">Alguien ya va para allá</h1>
-          <p className="auth-sub">
-            Reserva el puesto libre de un carro que ya iba a salir.
-          </p>
+      <div className="auth-wrap step-in">
+        <div className="auth-brand">
+          <LogoMark size={78} animate />
+          <h1 className="auth-wordmark">Puestico</h1>
+          <p className="auth-claim">Alguien ya va para allá. Móntate.</p>
         </div>
 
-        <p className="role-ask">¿Cómo vas a usar Puestico?</p>
+        {/* Un número real convence más que un adjetivo. */}
+        <div className="auth-proof rise" style={{ '--d': '80ms' } as React.CSSProperties}>
+          <span className="ap-line">
+            <strong>Guatire → Chacaíto</strong>
+          </span>
+          <span className="ap-nums">
+            <em className="ap-was">$14,50 en taxi</em>
+            <span className="ap-arrow">→</span>
+            <strong className="ap-now">$7,25</strong>
+          </span>
+          <span className="ap-tag">50% menos, en el mismo carro que ya iba</span>
+        </div>
+
+        <p className="role-ask rise" style={{ '--d': '160ms' } as React.CSSProperties}>
+          ¿Cómo vas a usar Puestico?
+        </p>
 
         <div className="role-cards">
           <button
             type="button"
-            className="role-card"
+            className="role-card rise"
+            style={{ '--d': '220ms' } as React.CSSProperties}
             onClick={() => {
               setRole('passenger');
               setStep('phone');
             }}
           >
-            <span className="rc-emoji">🎫</span>
-            <strong>Busco puesto</strong>
-            <small>
-              Necesito llegar a algún lado y quiero pagar menos que un taxi.
-            </small>
-            <span className="rc-go">Entrar como pasajero →</span>
+            <span className="rc-icon rc-icon-pass">🎫</span>
+            <span className="rc-main">
+              <strong>Busco puesto</strong>
+              <small>Necesito llegar y quiero pagar menos que un taxi.</small>
+            </span>
+            <span className="rc-chevron">→</span>
           </button>
 
           <button
             type="button"
-            className="role-card"
+            className="role-card rise"
+            style={{ '--d': '300ms' } as React.CSSProperties}
             onClick={() => {
               setRole('driver');
               setStep('phone');
             }}
           >
-            <span className="rc-emoji">🚗</span>
-            <strong>Tengo carro</strong>
-            <small>
-              Ya hago el viaje y quiero recuperar la gasolina llenando los
-              puestos vacíos.
-            </small>
-            <span className="rc-go">Entrar como conductor →</span>
+            <span className="rc-icon rc-icon-drive">🚗</span>
+            <span className="rc-main">
+              <strong>Tengo carro</strong>
+              <small>Ya hago el viaje y quiero recuperar la gasolina.</small>
+            </span>
+            <span className="rc-chevron">→</span>
           </button>
         </div>
 
-        <p className="auth-legal">
-          Puestico conecta particulares que comparten los gastos de un viaje
-          que ya iban a hacer. Puedes cambiar de rol después desde tu cuenta.
+        <p className="auth-legal rise" style={{ '--d': '380ms' } as React.CSSProperties}>
+          Puestico conecta particulares que comparten los gastos de un viaje que
+          ya iban a hacer. Puedes cambiar de rol después.
         </p>
       </div>
     );
@@ -225,50 +266,50 @@ export default function LoginFlow({
   // ─── Paso 1: teléfono ───────────────────────────────────
   if (step === 'phone') {
     return (
-      <div className="auth-wrap fade-in">
-        <div className="auth-hero">
+      <div className="auth-wrap step-in">
+        <Progress />
+
+        <button className="auth-back" onClick={() => setStep('role')}>
+          ← Volver
+        </button>
+
+        <div className="auth-head">
           <span className={`role-chip role-${role}`}>
             {role === 'driver' ? '🚗 Conductor' : '🎫 Pasajero'}
-            <button
-              type="button"
-              className="role-chip-change"
-              onClick={() => setStep('role')}
-            >
-              cambiar
-            </button>
           </span>
-          <h1 className="auth-title">Entra con tu teléfono</h1>
+          <h1 className="auth-title">¿Cuál es tu teléfono?</h1>
           <p className="auth-sub">
-            Sin contraseñas que recordar. Te confirmamos que eres tú con un
-            código.
+            Te mandamos un código por WhatsApp para confirmar que eres tú. Sin
+            contraseñas.
           </p>
         </div>
 
         <form
-          className="card"
+          className="auth-card"
           onSubmit={(e) => {
             e.preventDefault();
             sendCode();
           }}
         >
-          <div className="field">
-            <label htmlFor="tel">¿Cuál es tu teléfono?</label>
-            <div className="phone-input">
-              <span className="phone-cc">🇻🇪 +58</span>
-              <input
-                id="tel"
-                type="tel"
-                inputMode="numeric"
-                autoComplete="tel"
-                placeholder="0412 123 4567"
-                value={phone}
-                onChange={(e) => setPhone(formatPhone(e.target.value))}
-                autoFocus
-              />
-            </div>
-            <small className="field-hint">
-              Te mandamos un código por WhatsApp para confirmar que eres tú.
-            </small>
+          <div className="phone-input">
+            <span className="phone-cc">
+              <span className="cc-flag" aria-hidden="true">
+                <em />
+                <em />
+                <em />
+              </span>
+              +58
+            </span>
+            <input
+              type="tel"
+              inputMode="numeric"
+              autoComplete="tel"
+              placeholder="0412 123 4567"
+              value={phone}
+              onChange={(e) => setPhone(formatPhone(e.target.value))}
+              aria-label="Tu número de teléfono"
+              autoFocus
+            />
           </div>
 
           {error && (
@@ -287,11 +328,31 @@ export default function LoginFlow({
               'Continuar'
             )}
           </button>
+
+          {/* TEMPORAL: mientras WhatsApp no esté conectado. Se apaga
+              con PUESTICO_QUICK_ACCESS=0 y desaparece del servidor. */}
+          {quickAccess && (
+            <div className="quick-access">
+              <span className="qa-divider">
+                <em>mientras probamos</em>
+              </span>
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={enterWithoutCode}
+                disabled={loading || phone.length < 11}
+              >
+                Entrar sin código
+              </button>
+              <small className="qa-note">
+                Atajo temporal para probar la app sin WhatsApp conectado. Se quita
+                al conectarlo.
+              </small>
+            </div>
+          )}
         </form>
 
-        <p className="auth-legal">
-          Al continuar aceptas los términos de uso.
-        </p>
+        <p className="auth-legal">Al continuar aceptas los términos de uso.</p>
       </div>
     );
   }
@@ -299,16 +360,32 @@ export default function LoginFlow({
   // ─── Paso 2: código ─────────────────────────────────────
   if (step === 'code') {
     return (
-      <div className="auth-wrap fade-in">
-        <div className="auth-hero">
-          <div className="auth-icon">💬</div>
+      <div className="auth-wrap step-in">
+        <Progress />
+
+        <button
+          className="auth-back"
+          onClick={() => {
+            setStep('phone');
+            setError('');
+            setDemoCode('');
+          }}
+        >
+          ← Cambiar el número
+        </button>
+
+        <div className="auth-head">
+          <span className="auth-glyph">
+            <span className="ag-ring" />
+            💬
+          </span>
           <h1 className="auth-title">Escribe el código</h1>
           <p className="auth-sub">
-            Se lo mandamos a <strong>{phone}</strong> por WhatsApp.
+            Se lo mandamos a <strong className="auth-phone">{phone}</strong>
           </p>
         </div>
 
-        <div className="card">
+        <div className="auth-card">
           <div className="otp-row">
             {digits.map((d, i) => (
               <input
@@ -330,7 +407,7 @@ export default function LoginFlow({
           </div>
 
           {loading && (
-            <p className="note" style={{ textAlign: 'center' }}>
+            <p className="otp-checking">
               <span className="spinner" /> Verificando…
             </p>
           )}
@@ -347,8 +424,8 @@ export default function LoginFlow({
               <span className="demo-code-label">Modo demo</span>
               Tu código es <strong>{demoCode}</strong>
               <small>
-                Cuando WhatsApp esté conectado, este código llega al teléfono y
-                no se muestra acá.
+                Cuando WhatsApp esté conectado, el código llega al teléfono y no se
+                muestra acá.
               </small>
             </div>
           )}
@@ -357,31 +434,46 @@ export default function LoginFlow({
             {seconds > 0 ? (
               <span className="note">Puedes pedir otro en {seconds}s</span>
             ) : (
-              <button className="link-btn" onClick={() => sendCode(true)} disabled={loading}>
+              <button
+                className="link-btn"
+                onClick={() => sendCode(true)}
+                disabled={loading}
+              >
                 Enviar el código de nuevo
               </button>
             )}
-            <button
-              className="link-btn"
-              onClick={() => {
-                setStep('phone');
-                setError('');
-                setDemoCode('');
-              }}
-            >
-              Cambiar el número
-            </button>
           </div>
+
+          {quickAccess && (
+            <div className="quick-access">
+              <span className="qa-divider">
+                <em>mientras probamos</em>
+              </span>
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={enterWithoutCode}
+                disabled={loading}
+              >
+                Entrar sin código
+              </button>
+            </div>
+          )}
         </div>
       </div>
     );
   }
 
-  // ─── Paso 3: nombre y para qué entra ────────────────────
+  // ─── Paso 3: nombre ─────────────────────────────────────
   return (
-    <div className="auth-wrap fade-in">
-      <div className="auth-hero">
-        <div className="auth-icon">👋</div>
+    <div className="auth-wrap step-in">
+      <Progress />
+
+      <div className="auth-head">
+        <span className="auth-glyph">
+          <span className="ag-ring" />
+          👋
+        </span>
         <h1 className="auth-title">¿Cómo te llamas?</h1>
         <p className="auth-sub">
           {role === 'driver'
@@ -391,7 +483,7 @@ export default function LoginFlow({
       </div>
 
       <form
-        className="card"
+        className="auth-card"
         onSubmit={(e) => {
           e.preventDefault();
           saveName();
@@ -410,11 +502,8 @@ export default function LoginFlow({
           />
         </div>
 
-        {/* El rol ya se eligió al principio; acá solo se confirma. */}
         <div className={`role-confirm role-${role}`}>
-          <span className="rc-badge">
-            {role === 'driver' ? '🚗' : '🎫'}
-          </span>
+          <span className="rc-badge">{role === 'driver' ? '🚗' : '🎫'}</span>
           <span className="rc-text">
             <strong>
               Te registras como {role === 'driver' ? 'conductor' : 'pasajero'}

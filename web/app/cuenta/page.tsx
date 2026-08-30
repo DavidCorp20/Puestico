@@ -39,6 +39,35 @@ export default async function Cuenta() {
   const ahorro = Math.max(taxi - pagado, 0);
   const rating = ratingFor(user.name, user.rating);
 
+  /**
+   * Primeros pasos. Solo se muestra mientras falte algo: una lista de
+   * pendientes que nunca desaparece es ruido, y una cuenta nueva sin
+   * nada que hacer se ve abandonada.
+   */
+  const pasos = [
+    { hecho: true, texto: 'Confirmaste tu teléfono' },
+    {
+      hecho: check.status === 'approved',
+      texto:
+        check.status === 'pending'
+          ? 'Tu identidad está en revisión'
+          : 'Verifica tu identidad',
+      href: '/verificacion',
+      porque: 'Los conductores aceptan más rápido a quien tiene el sello.',
+    },
+    {
+      hecho: bookings.length > 0,
+      texto:
+        user.role === 'driver' ? 'Completa tu primer viaje' : 'Reserva tu primer puesto',
+      href: homeFor(user),
+      porque:
+        user.role === 'driver'
+          ? 'Publica tu ruta habitual y empieza a recuperar la gasolina.'
+          : 'El primer viaje es el que cuesta. Después ya sabes cómo es.',
+    },
+  ];
+  const faltan = pasos.filter((p) => !p.hecho);
+
   return (
     <>
       <TopBar title="Mi cuenta" back={homeFor(user)} />
@@ -59,6 +88,48 @@ export default async function Cuenta() {
             </a>
           )}
         </div>
+
+        {faltan.length > 0 && (
+          <div className="steps-card">
+            <div className="sc-head">
+              <strong>Primeros pasos</strong>
+              <span className="sc-count">
+                {pasos.length - faltan.length} de {pasos.length}
+              </span>
+            </div>
+            <div className="sc-bar">
+              <span
+                style={{
+                  width: `${((pasos.length - faltan.length) / pasos.length) * 100}%`,
+                }}
+              />
+            </div>
+            {pasos.map((paso) => {
+              const contenido = (
+                <>
+                  <span className={`sc-check ${paso.hecho ? 'done' : ''}`}>
+                    {paso.hecho ? '✓' : ''}
+                  </span>
+                  <span className="sc-body">
+                    <strong>{paso.texto}</strong>
+                    {!paso.hecho && paso.porque && <small>{paso.porque}</small>}
+                  </span>
+                  {!paso.hecho && paso.href && <span className="sc-go">→</span>}
+                </>
+              );
+
+              return paso.hecho || !paso.href ? (
+                <div className="sc-step is-done" key={paso.texto}>
+                  {contenido}
+                </div>
+              ) : (
+                <a className="sc-step" key={paso.texto} href={paso.href}>
+                  {contenido}
+                </a>
+              );
+            })}
+          </div>
+        )}
 
         {user.role === 'passenger' && bookings.length > 0 && (
           <div className="save-card">

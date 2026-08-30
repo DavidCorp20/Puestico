@@ -310,3 +310,51 @@ test('la verificación NO guarda la imagen, solo el hecho', () => {
 test('el estado por defecto es "sin verificar"', () => {
   assert.equal(auth.identityFor('u-nadie').status, 'none');
 });
+
+// ─── Acceso rápido (temporal) ──────────────────────────────────────
+
+test('el acceso rápido crea una cuenta normal, no una de segunda', () => {
+  const res = auth.quickAccess('0412 900 5511');
+  assert.equal(res.ok, true);
+  assert.ok(res.token, 'debe crear sesión');
+  assert.equal(res.user.phone, '+584129005511', 'el teléfono se normaliza igual');
+
+  // La sesión resuelve como cualquier otra: el atajo se salta la
+  // comprobación del número, no el registro.
+  assert.equal(auth.userForToken(res.token).id, res.user.id);
+});
+
+test('el acceso rápido valida el teléfono igual que el login normal', () => {
+  for (const malo of ['123', '0212 555 1234', '']) {
+    assert.equal(
+      auth.quickAccess(malo).ok,
+      false,
+      `"${malo}" no debería entrar ni por el atajo`,
+    );
+  }
+});
+
+test('el acceso rápido reconoce una cuenta que ya existe', () => {
+  const tel = '0412 900 5522';
+  const a = auth.quickAccess(tel);
+  const b = auth.quickAccess(tel);
+  assert.equal(a.user.id, b.user.id, 'el mismo teléfono es la misma cuenta');
+  assert.equal(b.is_new, false);
+});
+
+test('el interruptor apaga el atajo en el SERVIDOR, no solo el botón', () => {
+  const antes = process.env.PUESTICO_QUICK_ACCESS;
+  try {
+    process.env.PUESTICO_QUICK_ACCESS = '0';
+    assert.equal(auth.quickAccessEnabled(), false);
+    // Esto es lo que importa: aunque alguien llame la función directo
+    // (o la ruta de la API a mano), no entra.
+    const res = auth.quickAccess('0412 900 5533');
+    assert.equal(res.ok, false, 'apagado, el atajo no puede crear sesión');
+    assert.ok(!res.token);
+  } finally {
+    if (antes === undefined) delete process.env.PUESTICO_QUICK_ACCESS;
+    else process.env.PUESTICO_QUICK_ACCESS = antes;
+  }
+  assert.equal(auth.quickAccessEnabled(), true, 'y se puede volver a prender');
+});

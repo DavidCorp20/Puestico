@@ -4332,3 +4332,639 @@ a.ride-card:hover { border-color: var(--border-strong); }
     animation: none;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   RONDA 11 — Rediseño del ingreso y marca grande
+   ═══════════════════════════════════════════════════════════════════
+   David: "el diseño de ingreso es muy básico". Lo era: correcto y
+   aburrido, que en la primera pantalla es lo peor que puede ser.
+   ─────────────────────────────────────────────────────────────────── */
+
+/* ─── Pantalla completa con telón ─────────────────────────────────── */
+
+.auth-screen {
+  position: relative;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  padding: 26px 18px 30px;
+  overflow: hidden;
+}
+
+/* El telón del corredor va detrás de todo, y se atenúa hacia abajo
+   para que el texto siempre tenga contraste suficiente. */
+.auth-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.auth-backdrop svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.auth-backdrop::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(15, 20, 25, 0.35) 0%,
+    rgba(15, 20, 25, 0.72) 45%,
+    rgba(15, 20, 25, 0.92) 100%
+  );
+}
+
+.auth-wrap {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+}
+
+/* Cada paso entra con un desplazamiento corto: sin esto, cambiar de
+   paso se siente como recargar la página. */
+.step-in {
+  animation: step-in 0.32s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+@keyframes step-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Aparición escalonada: cada elemento declara su retardo con --d. */
+.rise {
+  animation: step-in 0.44s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  animation-delay: var(--d, 0ms);
+}
+
+/* ─── Marca grande ────────────────────────────────────────────────── */
+
+.logomark {
+  display: inline-block;
+  line-height: 0;
+}
+
+.logomark svg {
+  overflow: visible;
+  /* Sombra proyectada verde: hace que la marca flote sobre el telón. */
+  filter: drop-shadow(0 10px 26px rgba(34, 197, 94, 0.3));
+}
+
+/* El puesto libre es lo único que se mueve, porque es lo que la
+   persona viene a buscar. */
+.logomark.is-animated .lm-free {
+  transform-origin: 61px 61px;
+  animation: lm-breathe 2.9s ease-in-out infinite;
+}
+
+@keyframes lm-breathe {
+  0%, 100% { transform: scale(1); opacity: 0.95; }
+  50% { transform: scale(1.09); opacity: 1; }
+}
+
+.logomark.is-animated .lm-spark {
+  transform-origin: 61px 61px;
+  animation: lm-spark 2.9s ease-in-out infinite;
+}
+
+@keyframes lm-spark {
+  0%, 100% { transform: scale(0.55); opacity: 0.45; }
+  50% { transform: scale(1); opacity: 1; }
+}
+
+.auth-brand {
+  text-align: center;
+  padding: 4px 0 20px;
+}
+
+.auth-wordmark {
+  font-size: 2.05rem;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  margin: 14px 0 4px;
+  /* Degradado sobre el texto: la palabra es parte de la marca. */
+  background: linear-gradient(135deg, #fff 20%, #8FE7AE 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.auth-claim {
+  color: var(--muted);
+  font-size: 0.97rem;
+  margin: 0;
+}
+
+/* ─── Prueba social ──────────────────────────────────────────────── */
+
+/* Un número real convence más que un adjetivo, y va en la primera
+   pantalla porque es donde se decide si la persona sigue. */
+.auth-proof {
+  background: rgba(34, 197, 94, 0.08);
+  border: 1px solid rgba(34, 197, 94, 0.22);
+  border-radius: 16px;
+  padding: 14px 16px;
+  margin-bottom: 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  text-align: center;
+}
+
+.ap-line strong {
+  font-size: 0.85rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.ap-nums {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+}
+
+.ap-was {
+  color: var(--muted-2);
+  font-size: 0.92rem;
+  font-style: normal;
+  text-decoration: line-through;
+  text-decoration-color: rgba(239, 68, 68, 0.7);
+}
+
+.ap-arrow {
+  color: var(--muted-2);
+  font-size: 0.85rem;
+}
+
+.ap-now {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--accent-text);
+}
+
+.ap-tag {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+/* ─── Puntos de avance ───────────────────────────────────────────── */
+
+.auth-steps {
+  display: flex;
+  justify-content: center;
+  gap: 7px;
+  margin-bottom: 18px;
+}
+
+.as-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  transition: width 0.25s, background 0.25s;
+}
+
+.as-dot.done {
+  background: rgba(34, 197, 94, 0.55);
+}
+
+/* El punto actual se alarga: se lee el avance de un vistazo. */
+.as-dot.on {
+  width: 22px;
+  background: var(--accent);
+}
+
+/* ─── Cabecera y tarjeta de los pasos ────────────────────────────── */
+
+.auth-back {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 0.84rem;
+  padding: 4px 0;
+  margin-bottom: 10px;
+  cursor: pointer;
+}
+
+.auth-back:hover {
+  color: var(--accent-text);
+}
+
+.auth-head {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.auth-head .auth-title {
+  font-size: 1.5rem;
+  font-weight: 750;
+  letter-spacing: -0.025em;
+  margin: 10px 0 7px;
+}
+
+.auth-head .auth-sub {
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.auth-phone {
+  color: var(--text);
+  white-space: nowrap;
+}
+
+/* Emoji dentro de un aro: le da peso de ilustración a un carácter. */
+.auth-glyph {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 62px;
+  height: 62px;
+  font-size: 1.7rem;
+}
+
+.ag-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.26);
+}
+
+/* La tarjeta del paso: algo más de aire y de vidrio que una .card
+   normal, porque acá es el único objeto de la pantalla. */
+.auth-card {
+  background: rgba(22, 28, 36, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 20px;
+  padding: 18px;
+  backdrop-filter: blur(14px);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.36);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ─── Campo de teléfono ──────────────────────────────────────────── */
+
+.cc-flag {
+  display: inline-flex;
+  flex-direction: column;
+  width: 15px;
+  height: 11px;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.cc-flag em {
+  flex: 1;
+}
+
+.cc-flag em:nth-child(1) { background: #FFCE3A; }
+.cc-flag em:nth-child(2) { background: #0B49C4; }
+.cc-flag em:nth-child(3) { background: #D9243C; }
+
+.phone-cc {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+/* ─── Casillas del código ────────────────────────────────────────── */
+
+.otp-checking {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+/* Al llenarse, la casilla da un golpe corto: confirma el toque sin
+   necesitar texto. */
+.otp-box.filled {
+  animation: otp-pop 0.2s ease-out;
+}
+
+@keyframes otp-pop {
+  0% { transform: scale(1); }
+  45% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+/* ─── Tarjetas de rol ────────────────────────────────────────────── */
+
+/* Se rehacen en horizontal: icono, texto y flecha. En vertical
+   ocupaban demasiado y empujaban el resto fuera de la pantalla. */
+.role-card {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 13px;
+  background: rgba(22, 28, 36, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 18px;
+  padding: 15px 16px;
+  backdrop-filter: blur(14px);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.16s, transform 0.12s, background 0.16s;
+}
+
+.role-card:hover,
+.role-card:focus-visible {
+  border-color: rgba(34, 197, 94, 0.55);
+  background: rgba(34, 197, 94, 0.09);
+}
+
+.role-card:active {
+  transform: scale(0.985);
+}
+
+.rc-icon {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+
+.rc-icon-pass {
+  background: rgba(34, 197, 94, 0.14);
+  border: 1px solid rgba(34, 197, 94, 0.28);
+}
+
+.rc-icon-drive {
+  background: rgba(96, 165, 250, 0.13);
+  border: 1px solid rgba(96, 165, 250, 0.26);
+}
+
+.rc-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.rc-main strong {
+  font-size: 1.02rem;
+  font-weight: 700;
+}
+
+.rc-main small {
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.rc-chevron {
+  color: var(--accent-text);
+  font-size: 1.05rem;
+  flex-shrink: 0;
+  transition: transform 0.16s;
+}
+
+.role-card:hover .rc-chevron {
+  transform: translateX(3px);
+}
+
+.role-chip {
+  margin-bottom: 0;
+}
+
+/* ─── Acceso rápido (TEMPORAL) ───────────────────────────────────── */
+
+/* Va deliberadamente en segundo plano: es un atajo de prueba, no la
+   forma normal de entrar. Cuando WhatsApp funcione se apaga con
+   PUESTICO_QUICK_ACCESS=0 y desaparece del servidor, no solo de acá. */
+.quick-access {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.qa-divider {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  color: var(--muted-2);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.qa-divider::before,
+.qa-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.qa-divider em {
+  font-style: normal;
+}
+
+.quick-access .btn-ghost {
+  border-style: dashed;
+}
+
+.qa-note {
+  color: var(--muted-2);
+  font-size: 0.74rem;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.auth-legal {
+  color: var(--muted-2);
+  font-size: 0.76rem;
+  line-height: 1.55;
+  text-align: center;
+  margin: 16px 4px 0;
+}
+
+/* ─── Móvil y accesibilidad ──────────────────────────────────────── */
+
+@media (max-width: 560px) {
+  .auth-screen {
+    padding: 20px 15px 26px;
+  }
+
+  .auth-wordmark {
+    font-size: 1.85rem;
+  }
+
+  .ap-now {
+    font-size: 1.35rem;
+  }
+
+  .auth-head .auth-title {
+    font-size: 1.36rem;
+  }
+
+  .rc-icon {
+    width: 42px;
+    height: 42px;
+    font-size: 1.25rem;
+  }
+}
+
+/* Pantallas muy bajas: el telón y el aire sobran antes que el
+   contenido, así que se recortan primero. */
+@media (max-height: 700px) {
+  .auth-brand {
+    padding-bottom: 12px;
+  }
+
+  .auth-proof {
+    margin-bottom: 15px;
+  }
+
+  .logomark svg {
+    filter: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .step-in,
+  .rise,
+  .otp-box.filled,
+  .logomark.is-animated .lm-free,
+  .logomark.is-animated .lm-spark {
+    animation: none;
+  }
+
+  .rise {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ─── Primeros pasos, en Mi cuenta ────────────────────────────────── */
+
+/* Solo aparece mientras falte algo. Una lista de pendientes que nunca
+   desaparece es ruido, y una cuenta nueva sin nada que hacer se ve
+   abandonada. */
+.steps-card {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 15px 16px;
+  margin-bottom: 14px;
+}
+
+.sc-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.sc-head strong {
+  font-size: 0.96rem;
+}
+
+.sc-count {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.sc-bar {
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.sc-bar span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #16A34A, #22C55E);
+  transition: width 0.4s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.sc-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 9px 0;
+  text-decoration: none;
+  border-top: 1px solid var(--line);
+}
+
+.sc-step:first-of-type {
+  border-top: none;
+}
+
+.sc-check {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1.5px solid var(--line);
+  color: var(--on-accent);
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.sc-check.done {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.sc-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.sc-body strong {
+  font-size: 0.89rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* Lo ya hecho se atenúa: la vista salta a lo que falta. */
+.sc-step.is-done .sc-body strong {
+  color: var(--muted);
+}
+
+.sc-body small {
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.sc-go {
+  color: var(--accent-text);
+  font-size: 0.95rem;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
