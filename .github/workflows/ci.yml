@@ -60,3 +60,39 @@ jobs:
         run: |
           psql -h localhost -U carpool -d carpooling_ve_test \
             -f api/src/database/seeds/001_seed_data.sql
+
+  web:
+    name: Web — build y pruebas de identidad, pago y chat
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Node 22: `node:sqlite` (la persistencia) y el borrado de tipos
+      # que usan las pruebas vienen incluidos desde esta versión.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Instalar dependencias
+        working-directory: web
+        run: npm ci
+
+      - name: Tipos
+        working-directory: web
+        run: npx tsc --noEmit
+
+      # Esto es lo que faltaba: hasta ahora CI no miraba `web/` ni una
+      # vez, o sea que no protegía el código que el usuario ejecuta.
+      # Cubre normalización de teléfonos, que el código de verificación
+      # no quede en claro, que una reserva no nazca pagada y las reglas
+      # del chat.
+      - name: Pruebas de identidad, pago y chat
+        working-directory: web
+        run: npm test
+
+      - name: Build
+        working-directory: web
+        run: npm run build

@@ -3,6 +3,8 @@ import {
   bookingsForTrip,
   tripStatus,
   ratingFor,
+  unreadCount,
+  isPaid,
 } from '../../../../lib/store';
 import RouteMap from '../../../RouteMap';
 import TripControls from './TripControls';
@@ -110,6 +112,21 @@ export default async function DriverTrip({
             </div>
             <span className="seats-tag">${b.driver_amount_usd.toFixed(2)}</span>
           </div>
+
+          {!isPaid(b.id) && (
+            <p className="note note-warn">
+              Todavía no pagó su puesto.
+            </p>
+          )}
+
+          {/* El chat vive dentro de la app: queda registro y nadie
+              entrega su teléfono. */}
+          <a className="btn btn-ghost btn-sm chat-cta" href={`/chat/${b.id}`}>
+            Escribirle a {b.passenger_name.split(' ')[0]}
+            {unreadCount(b.id, 'driver') > 0 && (
+              <span className="cta-badge">{unreadCount(b.id, 'driver')}</span>
+            )}
+          </a>
         </div>
       ))}
 

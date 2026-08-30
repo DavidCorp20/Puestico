@@ -1,5 +1,5 @@
-import { TEST_USERS } from '../../../lib/data';
 import { findTrip, freeSeats, ratingFor, reviewsFor } from '../../../lib/store';
+import { currentUser } from '../../../lib/session';
 import { buildRoute, routeDistanceKm, routeDuration } from '../../../lib/route';
 import RouteMap from '../../RouteMap';
 import Avatar from '../../Avatar';
@@ -13,6 +13,10 @@ export default async function TripDetail({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  // Saber quién mira cambia la hoja de reserva: con sesión reserva
+  // directo, sin sesión el botón lleva a entrar. Nada de elegir
+  // pasajero de una lista.
+  const user = await currentUser();
   const trip = findTrip(id);
 
   if (!trip) {
@@ -157,20 +161,14 @@ export default async function TripDetail({
       {/* Hoja de reserva anclada abajo, como en Uber/Yummy: la acción
           principal siempre al alcance del pulgar */}
       <form className="book-sheet" action={`/reserva/${trip.id}`} method="get">
-        <div className="bs-grid">
+        <div className="bs-grid single">
           <div className="bs-field">
-            <label htmlFor="passenger">¿Quién viaja?</label>
-            <select id="passenger" name="passenger" defaultValue={TEST_USERS[0].id}>
-              {TEST_USERS.map((u) => (
-                <option key={u.id} value={u.id}>{u.name}</option>
-              ))}
-            </select>
-          </div>
-          <div className="bs-field">
-            <label htmlFor="seats">Puestos</label>
+            <label htmlFor="seats">¿Cuántos puestos?</label>
             <select id="seats" name="seats" defaultValue="1">
               {Array.from({ length: free }, (_, i) => i + 1).map((n) => (
-                <option key={n} value={n}>{n}</option>
+                <option key={n} value={n}>
+                  {n} {n === 1 ? 'puesto' : 'puestos'}
+                </option>
               ))}
             </select>
           </div>
@@ -181,9 +179,15 @@ export default async function TripDetail({
             <strong>${trip.price_usd.toFixed(2)}</strong>
             <small>por puesto</small>
           </div>
-          <button className="btn" type="submit">
-            Reservar mi puesto
-          </button>
+          {user && user.name ? (
+            <button className="btn" type="submit">
+              Reservar mi puesto
+            </button>
+          ) : (
+            <a className="btn" href={`/entrar?next=/viaje/${trip.id}`}>
+              Entrar y reservar
+            </a>
+          )}
         </div>
       </form>
       </main>

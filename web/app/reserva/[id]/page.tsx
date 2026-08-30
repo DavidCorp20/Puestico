@@ -1,7 +1,9 @@
-import { TEST_USERS } from '../../../lib/data';
+import { redirect } from 'next/navigation';
 import { quote, computeFare, passengerSavings } from '../../../lib/fare';
 import { findTrip, freeSeats, ratingFor } from '../../../lib/store';
+import { currentUser } from '../../../lib/session';
 import PayButton from './PayButton';
+import PayMethod from './PayMethod';
 import Avatar from '../../Avatar';
 import Stars from '../../Stars';
 import TopBar from '../../TopBar';
@@ -11,14 +13,20 @@ export default async function Reserva({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ passenger?: string; seats?: string; paid?: string }>;
+  searchParams: Promise<{ seats?: string; paid?: string; booking?: string }>;
 }) {
   const { id } = await params;
   const sp = await searchParams;
-  const trip = findTrip(id);
   const seats = Number(sp.seats || 1);
-  const passenger =
-    TEST_USERS.find((u) => u.id === sp.passenger) || TEST_USERS[0];
+
+  // Reservar exige sesión: es el punto donde la app deja de ser
+  // anónima, y donde el nombre que ve el conductor tiene que ser real.
+  const user = await currentUser();
+  if (!user) redirect(`/entrar?next=/reserva/${id}?seats=${seats}`);
+  if (!user.name) redirect('/entrar');
+  const passenger = user;
+
+  const trip = findTrip(id);
 
   if (!trip) {
     return (
@@ -125,7 +133,7 @@ export default async function Reserva({
             </li>
             <li>
               <span>Se coordinan el punto de encuentro</span>
-              <small>Por WhatsApp, una vez confirmada la reserva.</small>
+              <small>Por el chat de la app, sin dar tu teléfono.</small>
             </li>
             <li>
               <span>Viajan y se califican</span>
@@ -135,7 +143,12 @@ export default async function Reserva({
         </div>
 
         <div className="stack">
-          <a className="btn" href={`/mis-viajes?passenger=${passenger.id}`}>
+          {sp.booking && (
+            <a className="btn" href={`/chat/${sp.booking}`}>
+              Escribirle a {trip.driver.name.split(' ')[0]}
+            </a>
+          )}
+          <a className="btn btn-ghost" href="/mis-viajes">
             Ver mis viajes
           </a>
           <a className="btn btn-ghost" href="/">Buscar otro viaje</a>
@@ -234,11 +247,7 @@ export default async function Reserva({
         </p>
       </div>
 
-      <PayButton
-        tripId={trip.id}
-        passenger={passenger.id}
-        seats={seats}
-      />
+      <PayMethod tripId={trip.id} seats={seats} />
 
       <p className="note">
         Modo demo: no se cobra nada. Al confirmar simulamos el pago para que

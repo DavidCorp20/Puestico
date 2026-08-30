@@ -2858,3 +2858,959 @@ a.ride-card:hover { border-color: var(--border-strong); }
   .rc-time strong { font-size: 1.15rem; }
   .bs-grid { grid-template-columns: 1fr 76px; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   RONDA 9 — Identidad, verificación y chat
+   ═══════════════════════════════════════════════════════════════════
+   Tres pantallas nuevas con forma de app: entrar con teléfono,
+   verificar identidad y conversar con el conductor.
+   ─────────────────────────────────────────────────────────────────── */
+
+/* ─── Inicio de sesión ────────────────────────────────────────────── */
+
+.screen-auth {
+  display: flex;
+  align-items: center;
+  min-height: calc(100dvh - 64px);
+  padding-bottom: 24px;
+}
+
+.auth-wrap {
+  width: 100%;
+}
+
+.auth-hero {
+  text-align: center;
+  padding: 8px 4px 22px;
+}
+
+.auth-hero > svg {
+  margin-bottom: 14px;
+}
+
+.auth-icon {
+  font-size: 2.6rem;
+  line-height: 1;
+  margin-bottom: 10px;
+}
+
+.auth-title {
+  font-size: 1.55rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0 0 6px;
+}
+
+.auth-sub {
+  color: var(--muted);
+  font-size: 0.96rem;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.auth-legal {
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.55;
+  text-align: center;
+  margin: 18px 6px 0;
+}
+
+.auth-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+/* Prefijo del país fijo + campo: deja claro que se espera un número
+   venezolano sin obligar a escribir +58. */
+.phone-input {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 0 14px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.phone-input:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.14);
+}
+
+.phone-cc {
+  font-size: 0.98rem;
+  font-weight: 600;
+  color: var(--muted);
+  white-space: nowrap;
+  padding-right: 10px;
+  border-right: 1px solid var(--line);
+}
+
+.phone-input input {
+  flex: 1;
+  background: none;
+  border: none;
+  padding: 15px 0;
+  /* 16px o iOS hace zoom al enfocar. */
+  font-size: 1.06rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text);
+  outline: none;
+}
+
+.field-hint {
+  display: block;
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  margin-top: 7px;
+}
+
+/* Seis casillas para el código. Es el patrón que la gente reconoce y
+   permite pegar los seis dígitos de una vez. */
+.otp-row {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.otp-box {
+  aspect-ratio: 1 / 1.15;
+  width: 100%;
+  background: var(--surface-2);
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  text-align: center;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--text);
+  outline: none;
+  padding: 0;
+  transition: border-color 0.15s, background 0.15s, transform 0.1s;
+}
+
+.otp-box:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.14);
+}
+
+.otp-box.filled {
+  border-color: var(--accent);
+  background: rgba(34, 197, 94, 0.07);
+}
+
+/* El código en pantalla, rotulado como demo. Sin proveedor de
+   mensajería conectado, esconderlo haría la demo imposible de probar. */
+.demo-code {
+  background: rgba(234, 179, 8, 0.08);
+  border: 1px dashed rgba(234, 179, 8, 0.4);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-top: 14px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.demo-code-label {
+  display: inline-block;
+  background: rgba(234, 179, 8, 0.18);
+  color: #EAB308;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 3px 7px;
+  border-radius: 5px;
+  margin-right: 8px;
+}
+
+.demo-code strong {
+  font-size: 1.15rem;
+  letter-spacing: 0.12em;
+  color: var(--accent-text);
+}
+
+.demo-code small {
+  display: block;
+  color: var(--muted);
+  font-size: 0.78rem;
+  margin-top: 6px;
+}
+
+/* Elección pasajero / conductor: dos tarjetas grandes, no un select.
+   La decisión merece el espacio porque define la primera pantalla. */
+.choice-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.choice {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  background: var(--surface-2);
+  border: 1.5px solid var(--line);
+  border-radius: 14px;
+  padding: 14px 13px;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, transform 0.1s;
+}
+
+.choice:active {
+  transform: scale(0.98);
+}
+
+.choice.on {
+  border-color: var(--accent);
+  background: rgba(34, 197, 94, 0.08);
+}
+
+.choice-emoji {
+  font-size: 1.5rem;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.choice strong {
+  font-size: 0.93rem;
+  color: var(--text);
+}
+
+.choice small {
+  color: var(--muted);
+  font-size: 0.76rem;
+  line-height: 1.4;
+}
+
+/* ─── Cuenta en la barra superior ─────────────────────────────────── */
+
+.tb-me {
+  position: relative;
+  display: inline-flex;
+  text-decoration: none;
+}
+
+.tb-verified {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  width: 15px;
+  height: 15px;
+  display: grid;
+  place-items: center;
+  background: var(--accent);
+  color: var(--on-accent);
+  border: 2px solid var(--bg);
+  border-radius: 50%;
+  font-size: 0.6rem;
+  font-weight: 800;
+}
+
+.tb-login {
+  padding: 8px 16px;
+}
+
+/* ─── Mi cuenta ───────────────────────────────────────────────────── */
+
+.me-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 10px 0 20px;
+}
+
+.me-name {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin: 12px 0 6px;
+}
+
+.me-meta {
+  margin-bottom: 10px;
+}
+
+.me-verified {
+  background: rgba(34, 197, 94, 0.12);
+  color: var(--accent-text);
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.me-unverified {
+  color: var(--accent-text);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* El ahorro acumulado es el número que retiene, así que se muestra
+   grande y solo. Se calcula con datos reales, no con una promesa. */
+.save-card {
+  background: linear-gradient(
+    145deg,
+    rgba(34, 197, 94, 0.13),
+    rgba(34, 197, 94, 0.04)
+  );
+  border: 1px solid rgba(34, 197, 94, 0.24);
+  border-radius: 16px;
+  padding: 18px;
+  text-align: center;
+  margin-bottom: 14px;
+}
+
+.save-label {
+  display: block;
+  color: var(--muted);
+  font-size: 0.82rem;
+  margin-bottom: 4px;
+}
+
+.save-amount {
+  display: block;
+  font-size: 2.1rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--accent-text);
+  line-height: 1.1;
+}
+
+.save-card small {
+  display: block;
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.45;
+  margin-top: 6px;
+}
+
+/* ─── Verificación de identidad ───────────────────────────────────── */
+
+.verif-state {
+  text-align: center;
+  padding: 8px 4px 20px;
+}
+
+.verif-badge {
+  width: 62px;
+  height: 62px;
+  margin: 0 auto 14px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 1.7rem;
+  font-weight: 800;
+}
+
+.verif-badge.state-none {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+}
+
+.verif-badge.state-pending {
+  background: rgba(234, 179, 8, 0.13);
+  border: 1px solid rgba(234, 179, 8, 0.35);
+}
+
+.verif-badge.state-approved {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.verif-badge.state-rejected {
+  background: rgba(239, 68, 68, 0.13);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #F87171;
+}
+
+.verif-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0 0 7px;
+}
+
+.verif-sub {
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.verif-ok {
+  color: var(--accent-text);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+/* Dos zonas de carga lado a lado: cédula y cara. El estado "lista" es
+   visible sin leer, porque en el celular nadie lee. */
+.upload-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 6px 0 14px;
+}
+
+.upload {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: var(--surface-2);
+  border: 1.5px dashed var(--line);
+  border-radius: 14px;
+  padding: 16px 10px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.upload input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.upload:focus-within {
+  border-color: var(--accent);
+}
+
+.upload.done {
+  border-style: solid;
+  border-color: var(--accent);
+  background: rgba(34, 197, 94, 0.07);
+}
+
+.upload-icon {
+  font-size: 1.6rem;
+  line-height: 1;
+  margin-bottom: 3px;
+}
+
+.upload.done .upload-icon {
+  color: var(--accent-text);
+  font-weight: 800;
+}
+
+.upload strong {
+  font-size: 0.86rem;
+}
+
+.upload small {
+  color: var(--muted);
+  font-size: 0.74rem;
+  line-height: 1.35;
+}
+
+.bullets {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.65;
+}
+
+.bullets li + li {
+  margin-top: 8px;
+}
+
+.bullets strong {
+  color: var(--text);
+}
+
+.review-sim {
+  border-top: 1px solid var(--line);
+  margin-top: 14px;
+  padding-top: 14px;
+}
+
+.review-sim-label {
+  display: block;
+  color: var(--muted);
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 9px;
+}
+
+.review-sim-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* Aviso empujando a verificarse, en Mis viajes. */
+.nudge {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: 14px;
+  padding: 13px 14px;
+  margin-bottom: 14px;
+  text-decoration: none;
+  transition: transform 0.1s;
+}
+
+.nudge:active {
+  transform: scale(0.99);
+}
+
+.nudge-icon {
+  font-size: 1.35rem;
+}
+
+.nudge-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nudge-body strong {
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+.nudge-body small {
+  color: var(--muted);
+  font-size: 0.79rem;
+  line-height: 1.4;
+}
+
+.nudge-arrow {
+  color: var(--accent-text);
+  font-size: 1.1rem;
+}
+
+/* ─── Medios de pago ──────────────────────────────────────────────── */
+
+.pay-methods {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pay-method {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--surface-2);
+  border: 1.5px solid var(--line);
+  border-radius: 14px;
+  padding: 13px 14px;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, transform 0.1s;
+}
+
+.pay-method:active {
+  transform: scale(0.99);
+}
+
+.pay-method.on {
+  border-color: var(--accent);
+  background: rgba(34, 197, 94, 0.07);
+}
+
+.pm-emoji {
+  font-size: 1.4rem;
+}
+
+.pm-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pm-body strong {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.92rem;
+  color: var(--text);
+}
+
+.pm-tag {
+  background: rgba(34, 197, 94, 0.16);
+  color: var(--accent-text);
+  font-size: 0.66rem;
+  font-weight: 700;
+  font-style: normal;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 6px;
+  border-radius: 5px;
+}
+
+.pm-body small {
+  color: var(--muted);
+  font-size: 0.79rem;
+}
+
+.pm-radio {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--line);
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.pay-method.on .pm-radio {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 4px var(--accent);
+}
+
+/* ─── Chat ────────────────────────────────────────────────────────── */
+
+/* La pantalla del chat ocupa el alto de la ventana y solo el hilo
+   hace desplazamiento: el compositor queda siempre a la vista, que es
+   lo que se espera de un chat. */
+.chat-screen {
+  display: flex;
+  flex-direction: column;
+  height: calc(100dvh - 58px);
+  padding-bottom: 0;
+  overflow: hidden;
+}
+
+.chat-context {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  flex-shrink: 0;
+}
+
+.chat-context-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.chat-context-body strong {
+  font-size: 0.92rem;
+}
+
+.chat-context-body small {
+  color: var(--muted);
+  font-size: 0.78rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chat-context-link {
+  color: var(--accent-text);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.chat-log {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 4px 0 10px;
+  /* Desplazamiento suave sin saltos al llegar un mensaje nuevo. */
+  scroll-behavior: smooth;
+  overscroll-behavior: contain;
+}
+
+.chat-empty {
+  margin: auto;
+  text-align: center;
+  padding: 20px;
+  max-width: 260px;
+}
+
+.chat-empty-icon {
+  font-size: 2.2rem;
+  display: block;
+  margin-bottom: 10px;
+  opacity: 0.75;
+}
+
+.chat-empty strong {
+  display: block;
+  font-size: 0.98rem;
+  margin-bottom: 5px;
+}
+
+.chat-empty small {
+  color: var(--muted);
+  font-size: 0.83rem;
+  line-height: 1.5;
+}
+
+.bubble-row {
+  display: flex;
+  margin-top: 9px;
+}
+
+/* Mensajes seguidos de la misma persona se acercan: así el hilo se lee
+   como una conversación y no como una lista. */
+.bubble-row.grouped {
+  margin-top: 2px;
+}
+
+.bubble-row.mine {
+  justify-content: flex-end;
+}
+
+.bubble-row.theirs {
+  justify-content: flex-start;
+}
+
+.bubble {
+  position: relative;
+  max-width: 78%;
+  padding: 9px 13px 9px 13px;
+  border-radius: 18px;
+  font-size: 0.93rem;
+  line-height: 1.45;
+  word-break: break-word;
+  animation: bubble-in 0.18s ease-out;
+}
+
+@keyframes bubble-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.bubble-row.mine .bubble {
+  background: var(--accent);
+  color: var(--on-accent);
+  border-bottom-right-radius: 6px;
+}
+
+.bubble-row.mine.grouped .bubble {
+  border-top-right-radius: 6px;
+}
+
+.bubble-row.theirs .bubble {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  color: var(--text);
+  border-bottom-left-radius: 6px;
+}
+
+.bubble-row.theirs.grouped .bubble {
+  border-top-left-radius: 6px;
+}
+
+.bubble-time {
+  display: inline-block;
+  font-size: 0.67rem;
+  opacity: 0.65;
+  margin-left: 8px;
+  vertical-align: baseline;
+  white-space: nowrap;
+}
+
+/* Respuestas rápidas: en un chat de viaje casi todo lo que se dice son
+   cuatro frases. Un toque en vez de escribir con una mano en la calle. */
+.quick-replies {
+  display: flex;
+  gap: 7px;
+  overflow-x: auto;
+  padding: 0 0 9px;
+  scrollbar-width: none;
+}
+
+.quick-replies::-webkit-scrollbar {
+  display: none;
+}
+
+.quick-reply {
+  flex-shrink: 0;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 7px 13px;
+  font-size: 0.82rem;
+  color: var(--text);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.1s;
+}
+
+.quick-reply:active {
+  transform: scale(0.96);
+}
+
+.quick-reply:hover {
+  border-color: var(--accent);
+}
+
+.chat-composer {
+  flex-shrink: 0;
+  padding: 8px 0 14px;
+  background: var(--bg);
+  border-top: 1px solid var(--line);
+}
+
+.composer-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.composer-input {
+  flex: 1;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 12px 16px;
+  /* 16px o iOS hace zoom al enfocar. */
+  font-size: 1rem;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.composer-input:focus {
+  border-color: var(--accent);
+}
+
+.composer-send {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  background: var(--accent);
+  color: var(--on-accent);
+  border: none;
+  border-radius: 50%;
+  font-size: 1.25rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+}
+
+.composer-send:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.composer-send:not(:disabled):active {
+  transform: scale(0.92);
+}
+
+.chat-closed {
+  flex-shrink: 0;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 13px;
+  margin-bottom: 14px;
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.5;
+  text-align: center;
+}
+
+/* Botón de chat con contador, en las tarjetas de viaje. */
+.chat-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+}
+
+.cta-badge {
+  min-width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  background: #EF4444;
+  color: #fff;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0 6px;
+}
+
+/* ─── Móvil ───────────────────────────────────────────────────────── */
+
+@media (max-width: 560px) {
+  .otp-row {
+    gap: 6px;
+  }
+
+  .otp-box {
+    font-size: 1.2rem;
+    border-radius: 10px;
+  }
+
+  .upload-grid,
+  .choice-row {
+    gap: 8px;
+  }
+
+  .auth-title {
+    font-size: 1.4rem;
+  }
+
+  .save-amount {
+    font-size: 1.9rem;
+  }
+
+  .bubble {
+    max-width: 82%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bubble {
+    animation: none;
+  }
+
+  .chat-log {
+    scroll-behavior: auto;
+  }
+}
+
+/* Aviso de reserva sin pagar, del lado del conductor. */
+.note-warn {
+  color: #EAB308;
+}
+
+/* La hoja de reserva ya no pregunta quién viaja: lo sabe por la
+   sesión. Queda un solo campo, así que ocupa todo el ancho. */
+.bs-grid.single {
+  grid-template-columns: 1fr;
+}

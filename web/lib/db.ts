@@ -47,7 +47,29 @@ function connect(): DatabaseSync {
   db.exec('PRAGMA busy_timeout = 5000');
 
   migrate(db);
+  addColumns(db);
   return db;
+}
+
+/**
+ * Columnas agregadas después de que ya existían bases en uso.
+ *
+ * `CREATE TABLE IF NOT EXISTS` NO agrega columnas a una tabla que ya
+ * existe: la deja tal cual y no avisa. Esto es la trampa clásica de
+ * migrar con SQLite, y cuesta un rato de depuración confusa. Cada
+ * columna nueva se agrega acá, tolerando el error de "ya existe".
+ */
+function addColumns(db: DatabaseSync) {
+  const additions: Array<[string, string]> = [
+    ['users', 'driver_ref TEXT'],
+  ];
+  for (const [table, definition] of additions) {
+    try {
+      db.exec(`ALTER TABLE ${table} ADD COLUMN ${definition}`);
+    } catch {
+      // Ya está. Es el caso normal en todo arranque después del primero.
+    }
+  }
 }
 
 /**
@@ -134,6 +156,98 @@ function migrate(db: DatabaseSync) {
     CREATE TABLE IF NOT EXISTS meta (
       key   TEXT PRIMARY KEY,
       value TEXT NOT NULL
+    );
+
+    /* ─── Identidad ───────────────────────────────────────────────
+       Cuentas reales creadas al iniciar sesión con teléfono. El
+       teléfono se guarda normalizado en E.164 y es la identidad
+       única: en Venezuela es el dato que todos tienen y el canal por
+       el que se verifica (WhatsApp). */
+    CREATE TABLE IF NOT EXISTS users (
+      id           TEXT PRIMARY KEY,
+      phone        TEXT NOT NULL UNIQUE,
+      name         TEXT NOT NULL DEFAULT '',
+      role         TEXT NOT NULL DEFAULT 'passenger',
+      rating       REAL NOT NULL DEFAULT 5,
+      /* Cuando la cuenta conduce, apunta al perfil de conductor con el
+         que publica viajes. Así el chat y el panel del conductor
+         funcionan con la sesión real y no con un id elegido a mano. */
+      driver_ref   TEXT,
+      phone_verified_at TEXT,
+      created_at   TEXT NOT NULL
+    );
+
+    /* Códigos de verificación. Se guardan HASHEADOS: un volcado de la
+       base no debe permitir entrar a ninguna cuenta. */
+    CREATE TABLE IF NOT EXISTS otp_codes (
+      id          TEXT PRIMARY KEY,
+      phone       TEXT NOT NULL,
+      code_hash   TEXT NOT NULL,
+      channel     TEXT NOT NULL DEFAULT 'whatsapp',
+      attempts    INTEGER NOT NULL DEFAULT 0,
+      consumed_at TEXT,
+      expires_at  TEXT NOT NULL,
+      created_at  TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_otp_phone ON otp_codes(phone, created_at);
+
+    /* Sesiones. El navegador solo guarda este token opaco en una
+       cookie httpOnly; la identidad se resuelve del lado servidor. */
+    CREATE TABLE IF NOT EXISTS sessions (
+      token       TEXT PRIMARY KEY,
+      user_id     TEXT NOT NULL,
+      created_at  TEXT NOT NULL,
+      expires_at  TEXT NOT NULL,
+      revoked_at  TEXT
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
+
+    /* ─── Chat pasajero ↔ conductor ───────────────────────────────
+       La conversación se ancla a la RESERVA, no al usuario: solo
+       existe cuando hay un viaje que los une, y muere con él. Es la
+       decisión que evita que la app sea un directorio de teléfonos. */
+    CREATE TABLE IF NOT EXISTS messages (
+      id          TEXT PRIMARY KEY,
+      booking_id  TEXT NOT NULL,
+      sender_role TEXT NOT NULL CHECK (sender_role IN ('passenger','driver')),
+      sender_name TEXT NOT NULL,
+      body        TEXT NOT NULL,
+      read_at     TEXT,
+      created_at  TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_messages_booking
+      ON messages(booking_id, created_at);
+
+    /* ─── Verificación de identidad del pasajero ──────────────────
+       Distinta del KYC del conductor: acá alcanza cédula + selfie.
+       NUNCA guardamos la imagen en la base ni en el repositorio: solo
+       el hecho de que se entregó y su huella. */
+    CREATE TABLE IF NOT EXISTS identity_checks (
+      user_id      TEXT PRIMARY KEY,
+      status       TEXT NOT NULL,
+      id_number    TEXT NOT NULL DEFAULT '',
+      full_name    TEXT NOT NULL DEFAULT '',
+      selfie_ref   TEXT NOT NULL DEFAULT '',
+      submitted_at TEXT,
+      reviewed_at  TEXT,
+      reason       TEXT NOT NULL DEFAULT ''
+    );
+
+    /* ─── Pagos ───────────────────────────────────────────────────
+       QA encontró que la reserva nacía marcada como pagada antes de
+       que existiera pago alguno. Ahora el pago es un hecho con su
+       propio registro: sin una fila acá, la reserva no está pagada. */
+    CREATE TABLE IF NOT EXISTS payments (
+      id          TEXT PRIMARY KEY,
+      booking_id  TEXT NOT NULL UNIQUE,
+      amount_usd  REAL NOT NULL,
+      method      TEXT NOT NULL,
+      status      TEXT NOT NULL,
+      reference   TEXT NOT NULL DEFAULT '',
+      created_at  TEXT NOT NULL
     );
   `);
 }

@@ -1,4 +1,6 @@
-import { TEST_USERS } from '../../lib/data';
+import { redirect } from 'next/navigation';
+import { identityFor } from '../../lib/auth';
+import { currentUser } from '../../lib/session';
 import {
   bookingsForPassenger,
   findTrip,
@@ -7,6 +9,8 @@ import {
   ratingFor,
   refundFor,
   departureDate,
+  unreadCount,
+  isPaid,
 } from '../../lib/store';
 import Avatar from '../Avatar';
 import Stars from '../Stars';
@@ -23,14 +27,16 @@ const LABEL: Record<string, string> = {
   cancelled: 'Cancelado',
 };
 
-export default async function MisViajes({
-  searchParams,
-}: {
-  searchParams: Promise<{ passenger?: string }>;
-}) {
-  const sp = await searchParams;
-  const passengerId = sp.passenger || TEST_USERS[0].id;
-  const passenger = TEST_USERS.find((u) => u.id === passengerId) || TEST_USERS[0];
+export default async function MisViajes() {
+  // La identidad sale de la sesión, no de la barra de direcciones.
+  // Antes se elegía el pasajero con un selector: útil para probar,
+  // inaceptable en cuanto hay cuentas reales.
+  const user = await currentUser();
+  if (!user) redirect('/entrar?next=/mis-viajes');
+  if (!user.name) redirect('/entrar');
+
+  const passenger = user;
+  const verified = identityFor(user.id).status === 'approved';
   const bookings = bookingsForPassenger(passenger.id).reverse();
 
   const activos = bookings.filter(
@@ -53,19 +59,16 @@ export default async function MisViajes({
         <p className="greet-sub">Tus puestos y en qué va cada uno.</p>
       </div>
 
-      <form className="card compact" method="get">
-        <div className="field">
-          <label htmlFor="p">Viendo como</label>
-          <select id="p" name="passenger" defaultValue={passenger.id}>
-            {TEST_USERS.map((u) => (
-              <option key={u.id} value={u.id}>{u.name}</option>
-            ))}
-          </select>
-        </div>
-        <button className="btn btn-ghost btn-sm" type="submit">
-          Cambiar
-        </button>
-      </form>
+      {!verified && bookings.length > 0 && (
+        <a className="nudge" href="/verificacion">
+          <span className="nudge-icon">🪪</span>
+          <span className="nudge-body">
+            <strong>Verifica tu identidad</strong>
+            <small>Los conductores aceptan más rápido a quien tiene el sello.</small>
+          </span>
+          <span className="nudge-arrow">→</span>
+        </a>
+      )}
 
       {bookings.length > 0 && (
         <div className="stats">
@@ -102,6 +105,8 @@ export default async function MisViajes({
         const status = tripStatus(trip.id);
         const rating = ratingFor(trip.driver.name, trip.driver.rating);
         const { refund, full, hoursLeft } = refundFor(b, departureDate(trip.id));
+        const unread = unreadCount(b.id, 'passenger');
+        const paid = isPaid(b.id);
 
         return (
           <div className="card fade-in" key={b.id}>
@@ -113,7 +118,7 @@ export default async function MisViajes({
                 </div>
               </div>
               <span className={`status-pill status-${b.status}`}>
-                {LABEL[b.status]}
+                {paid ? LABEL[b.status] : 'Sin pagar'}
               </span>
             </div>
 
@@ -141,15 +146,12 @@ export default async function MisViajes({
                   Viaje confirmado. {trip.driver.name.split(' ')[0]} te recoge
                   en {trip.origin} a las {trip.departure_time}.
                 </p>
-                <a
-                  className="btn btn-ghost btn-sm"
-                  href={`https://wa.me/?text=${encodeURIComponent(
-                    `Hola ${trip.driver.name.split(' ')[0]}, soy ${passenger.name} y reservé un puesto en tu viaje ${trip.origin} → ${trip.destination} de las ${trip.departure_time}.`,
-                  )}`}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Escribirle por WhatsApp
+                {/* El chat va dentro de la app, no en WhatsApp: acá
+                    queda el registro si algo pasa, y no hay que
+                    entregar el teléfono de nadie. */}
+                <a className="btn chat-cta" href={`/chat/${b.id}`}>
+                  Escribirle a {trip.driver.name.split(' ')[0]}
+                  {unread > 0 && <span className="cta-badge">{unread}</span>}
                 </a>
                 <CancelButton
                   bookingId={b.id}
@@ -166,6 +168,15 @@ export default async function MisViajes({
                   {trip.driver.name.split(' ')[0]} todavía no responde tu
                   solicitud. Suele tardar unos minutos.
                 </p>
+                {!paid && (
+                  <a className="btn" href={`/reserva/${trip.id}?seats=${b.seats}&booking=${b.id}`}>
+                    Pagar ${b.total_usd.toFixed(2)} y confirmar
+                  </a>
+                )}
+                <a className="btn btn-ghost chat-cta" href={`/chat/${b.id}`}>
+                  Escribirle a {trip.driver.name.split(' ')[0]}
+                  {unread > 0 && <span className="cta-badge">{unread}</span>}
+                </a>
                 <CancelButton
                   bookingId={b.id}
                   total={b.total_usd}

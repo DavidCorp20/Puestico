@@ -1,5 +1,10 @@
 import { TEST_DRIVERS, TEST_USERS } from '../lib/data';
-import { bookingsForDriver, bookingsForPassenger } from '../lib/store';
+import {
+  bookingsForDriver,
+  bookingsForPassenger,
+  unreadForPassenger,
+  unreadForDriver,
+} from '../lib/store';
 import {
   IconSearch,
   IconTicket,
@@ -13,6 +18,9 @@ import {
  * En el celular el pulgar llega abajo, no arriba: por eso la navegación
  * principal va acá y no en la cabecera. Los contadores siguen en vivo,
  * igual que antes, para que el usuario vea que del otro lado pasó algo.
+ *
+ * Los contadores ahora suman los mensajes sin leer del chat: un mensaje
+ * del conductor que no se ve en la barra es un mensaje que no se lee.
  */
 export default function BottomNav({
   current,
@@ -26,13 +34,14 @@ export default function BottomNav({
   const passengerId = passenger || TEST_USERS[0].id;
   const driverId = driver || TEST_DRIVERS[0].id;
 
-  const misViajes = bookingsForPassenger(passengerId).filter(
-    (b) => b.status === 'pending' || b.status === 'confirmed',
-  ).length;
+  const misViajes =
+    bookingsForPassenger(passengerId).filter(
+      (b) => b.status === 'pending' || b.status === 'confirmed',
+    ).length + unreadForPassenger(passengerId);
 
-  const pendientes = bookingsForDriver(driverId).filter(
-    (b) => b.status === 'pending',
-  ).length;
+  const pendientes =
+    bookingsForDriver(driverId).filter((b) => b.status === 'pending').length +
+    unreadForDriver(driverId);
 
   const tabs = [
     {

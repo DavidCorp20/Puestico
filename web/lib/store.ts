@@ -582,3 +582,206 @@ export function seedDemo() {
 }
 
 seedDemo();
+
+// ─── Chat pasajero ↔ conductor ─────────────────────────────────────
+
+/**
+ * La conversación se ancla a la RESERVA, no al usuario.
+ *
+ * Es la decisión de diseño que importa: solo se puede escribir a
+ * alguien con quien compartes un viaje concreto, y la conversación
+ * muere con ese viaje. Sin eso, la app se convierte en un directorio
+ * de teléfonos — que es exactamente el riesgo de seguridad que
+ * hundió a varias plataformas de este tipo.
+ */
+export interface DemoMessage {
+  id: string;
+  booking_id: string;
+  sender_role: 'passenger' | 'driver';
+  sender_name: string;
+  body: string;
+  read_at?: string;
+  created_at: string;
+}
+
+function toMessage(r: Row): DemoMessage {
+  return {
+    id: r.id as string,
+    booking_id: r.booking_id as string,
+    sender_role: r.sender_role as 'passenger' | 'driver',
+    sender_name: r.sender_name as string,
+    body: r.body as string,
+    read_at: (r.read_at as string) || undefined,
+    created_at: r.created_at as string,
+  };
+}
+
+export function messagesForBooking(bookingId: string): DemoMessage[] {
+  return (
+    db
+      .prepare('SELECT * FROM messages WHERE booking_id = ? ORDER BY created_at')
+      .all(bookingId) as Row[]
+  ).map(toMessage);
+}
+
+export function insertMessage(m: DemoMessage) {
+  db.prepare(
+    `INSERT INTO messages (id, booking_id, sender_role, sender_name, body, created_at)
+     VALUES (?,?,?,?,?,?)`,
+  ).run(m.id, m.booking_id, m.sender_role, m.sender_name, m.body, m.created_at);
+}
+
+/** Marca como leídos los mensajes que me escribió el otro lado. */
+export function markRead(bookingId: string, myRole: 'passenger' | 'driver') {
+  const other = myRole === 'passenger' ? 'driver' : 'passenger';
+  db.prepare(
+    `UPDATE messages SET read_at = ?
+     WHERE booking_id = ? AND sender_role = ? AND read_at IS NULL`,
+  ).run(new Date().toISOString(), bookingId, other);
+}
+
+/** Cuántos mensajes sin leer tengo en esta reserva. */
+export function unreadCount(bookingId: string, myRole: 'passenger' | 'driver'): number {
+  const other = myRole === 'passenger' ? 'driver' : 'passenger';
+  const row = db
+    .prepare(
+      `SELECT COUNT(*) AS n FROM messages
+       WHERE booking_id = ? AND sender_role = ? AND read_at IS NULL`,
+    )
+    .get(bookingId, other) as { n: number };
+  return row.n;
+}
+
+/** Total de mensajes sin leer de un pasajero, para el contador del menú. */
+export function unreadForPassenger(passengerId: string): number {
+  const row = db
+    .prepare(
+      `SELECT COUNT(*) AS n FROM messages m
+       JOIN bookings b ON b.id = m.booking_id
+       WHERE b.passenger_id = ? AND m.sender_role = 'driver' AND m.read_at IS NULL`,
+    )
+    .get(passengerId) as { n: number };
+  return row.n;
+}
+
+export function unreadForDriver(driverId: string): number {
+  const tripIds = allTrips()
+    .filter((t) => t.driver.id === driverId)
+    .map((t) => t.id);
+  if (tripIds.length === 0) return 0;
+  const marks = tripIds.map(() => '?').join(',');
+  const row = db
+    .prepare(
+      `SELECT COUNT(*) AS n FROM messages m
+       JOIN bookings b ON b.id = m.booking_id
+       WHERE b.trip_id IN (${marks}) AND m.sender_role = 'passenger'
+         AND m.read_at IS NULL`,
+    )
+    .get(...tripIds) as { n: number };
+  return row.n;
+}
+
+/** Última línea de la conversación, para la lista de chats. */
+export function lastMessage(bookingId: string): DemoMessage | undefined {
+  const r = db
+    .prepare(
+      'SELECT * FROM messages WHERE booking_id = ? ORDER BY created_at DESC LIMIT 1',
+    )
+    .get(bookingId) as Row | undefined;
+  return r ? toMessage(r) : undefined;
+}
+
+// ─── Pagos ─────────────────────────────────────────────────────────
+
+/**
+ * QA encontró que la reserva nacía con `paid: true` antes de que
+ * existiera pago alguno — no existía el estado "reservado y sin
+ * pagar", que es justo donde vive el riesgo de fraude.
+ *
+ * Ahora el pago es un hecho con su propio registro: la reserva está
+ * pagada si y solo si hay una fila `succeeded` acá.
+ */
+export type PaymentStatus = 'pending' | 'succeeded' | 'failed';
+
+export interface DemoPayment {
+  id: string;
+  booking_id: string;
+  amount_usd: number;
+  method: string;
+  status: PaymentStatus;
+  reference: string;
+  created_at: string;
+}
+
+export function paymentFor(bookingId: string): DemoPayment | undefined {
+  const r = db.prepare('SELECT * FROM payments WHERE booking_id = ?').get(bookingId) as
+    | Row
+    | undefined;
+  if (!r) return undefined;
+  return {
+    id: r.id as string,
+    booking_id: r.booking_id as string,
+    amount_usd: r.amount_usd as number,
+    method: r.method as string,
+    status: r.status as PaymentStatus,
+    reference: r.reference as string,
+    created_at: r.created_at as string,
+  };
+}
+
+export function isPaid(bookingId: string): boolean {
+  return paymentFor(bookingId)?.status === 'succeeded';
+}
+
+/**
+ * Registra el pago y marca la reserva. Las dos escrituras van juntas
+ * o ninguna: una reserva marcada pagada sin registro de pago es
+ * precisamente el estado inconsistente que estamos eliminando.
+ */
+export function recordPayment(
+  bookingId: string,
+  amount: number,
+  method: string,
+  status: PaymentStatus,
+  reference = '',
+): DemoPayment {
+  const payment: DemoPayment = {
+    id: nextId('pay'),
+    booking_id: bookingId,
+    amount_usd: amount,
+    method,
+    status,
+    reference,
+    created_at: new Date().toISOString(),
+  };
+
+  db.exec('BEGIN');
+  try {
+    db.prepare(
+      `INSERT INTO payments (id, booking_id, amount_usd, method, status, reference, created_at)
+       VALUES (?,?,?,?,?,?,?)
+       ON CONFLICT(booking_id) DO UPDATE SET
+         status = excluded.status,
+         method = excluded.method,
+         reference = excluded.reference,
+         created_at = excluded.created_at`,
+    ).run(
+      payment.id,
+      payment.booking_id,
+      payment.amount_usd,
+      payment.method,
+      payment.status,
+      payment.reference,
+      payment.created_at,
+    );
+    db.prepare('UPDATE bookings SET paid = ? WHERE id = ?').run(
+      status === 'succeeded' ? 1 : 0,
+      bookingId,
+    );
+    db.exec('COMMIT');
+  } catch (e) {
+    db.exec('ROLLBACK');
+    throw e;
+  }
+  return payment;
+}

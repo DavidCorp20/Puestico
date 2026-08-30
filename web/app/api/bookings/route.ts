@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { passengerById, TEST_USERS } from '../../../lib/data';
 import { quote } from '../../../lib/fare';
+import { currentUser } from '../../../lib/session';
 import {
   findTrip,
   nextId,
@@ -11,6 +11,8 @@ import {
   insertBooking,
   cancelBooking,
   allBookings,
+  recordPayment,
+  isPaid,
 } from '../../../lib/store';
 
 /**
@@ -21,10 +23,32 @@ import {
  *  - debe haber puestos suficientes (Q10)
  *  - el conductor no puede reservar su propio viaje
  *
- * La reserva nace en 'pending': el conductor tiene que aceptarla.
+ * La reserva nace en 'pending' y SIN pagar: el conductor tiene que
+ * aceptarla y el pago es un paso aparte con su propio registro.
  */
 export async function POST(request: Request) {
-  const { trip_id, passenger_id, seats, simulate } = await request.json();
+  const { trip_id, seats, simulate } = await request.json();
+
+  // El pasajero sale de la SESIÓN, nunca del cuerpo del pedido.
+  //
+  // QA reportó que un id de pasajero inexistente se sustituía en
+  // silencio por el usuario de prueba: pedías una reserva con un id
+  // inventado y la creaba a nombre de otra persona con un 201. La
+  // causa era aceptar la identidad desde el cliente. Ahora la resuelve
+  // el servidor y el agujero desaparece por construcción.
+  const user = await currentUser();
+  if (!user) {
+    return NextResponse.json(
+      { error: 'Inicia sesión para reservar tu puesto.', code: 'AUTH_REQUIRED' },
+      { status: 401 },
+    );
+  }
+  if (!user.name) {
+    return NextResponse.json(
+      { error: 'Completa tu nombre antes de reservar.', code: 'PROFILE_INCOMPLETE' },
+      { status: 403 },
+    );
+  }
 
   // Modo demo: permite provocar a mano un pago rechazado, para poder
   // mostrar el camino de error y no solo el camino feliz.
@@ -44,7 +68,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'El viaje no existe' }, { status: 404 });
   }
 
-  if (trip.driver.id === passenger_id) {
+  if (trip.driver.id === user.id) {
     return NextResponse.json(
       { error: 'No puedes reservar tu propio viaje' },
       { status: 400 },
@@ -66,27 +90,83 @@ export async function POST(request: Request) {
     );
   }
 
-  const passenger = passengerById(passenger_id) || TEST_USERS[0];
   // quote() aplica el descuento por puesto adicional y la comisión
   const { total, commission, driverAmount } = quote(trip.price_usd, requested);
 
   const booking = {
     id: nextId('b'),
     trip_id,
-    passenger_id: passenger.id,
-    passenger_name: passenger.name,
-    passenger_rating: passenger.rating,
+    passenger_id: user.id,
+    passenger_name: user.name,
+    passenger_rating: user.rating,
     seats: requested,
     status: 'pending' as const,
     total_usd: total,
     commission_usd: commission,
     driver_amount_usd: driverAmount,
-    paid: true, // pago simulado al confirmar
+    // Nace SIN pagar. Antes nacía con paid:true antes de que existiera
+    // pago alguno, así que no existía el estado "reservado y no pagado"
+    // — justo donde vive el riesgo de fraude.
+    paid: false,
     created_at: new Date().toISOString(),
   };
 
   insertBooking(booking);
   return NextResponse.json(booking, { status: 201 });
+}
+
+/**
+ * Pago de una reserva. Separado de la creación a propósito: el pago es
+ * un hecho con su propio registro, y la reserva está pagada si y solo
+ * si existe ese registro en estado `succeeded`.
+ */
+export async function PUT(request: Request) {
+  const { booking_id, method, simulate } = await request.json();
+
+  const user = await currentUser();
+  if (!user) {
+    return NextResponse.json({ error: 'Inicia sesión.' }, { status: 401 });
+  }
+
+  const booking = getBooking(booking_id);
+  if (!booking) {
+    return NextResponse.json({ error: 'Reserva no encontrada' }, { status: 404 });
+  }
+  // Solo el dueño de la reserva la paga.
+  if (booking.passenger_id !== user.id) {
+    return NextResponse.json({ error: 'Reserva no encontrada' }, { status: 404 });
+  }
+  if (isPaid(booking_id)) {
+    return NextResponse.json({ error: 'Esta reserva ya está pagada.' }, { status: 409 });
+  }
+  if (['cancelled', 'rejected'].includes(booking.status)) {
+    return NextResponse.json(
+      { error: 'Esta reserva ya no está activa.' },
+      { status: 409 },
+    );
+  }
+
+  if (simulate === 'payment_declined') {
+    recordPayment(booking_id, booking.total_usd, method || 'pago_movil', 'failed');
+    return NextResponse.json(
+      {
+        error:
+          'El pago fue rechazado por el banco emisor. No se te cobró nada; intenta con otro medio de pago.',
+        code: 'PAYMENT_DECLINED',
+      },
+      { status: 402 },
+    );
+  }
+
+  const payment = recordPayment(
+    booking_id,
+    booking.total_usd,
+    method || 'pago_movil',
+    'succeeded',
+    `PM-${Date.now().toString().slice(-8)}`,
+  );
+
+  return NextResponse.json({ ok: true, payment });
 }
 
 /**

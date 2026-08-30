@@ -7,6 +7,7 @@ import {
   ratingFor,
   reviewForBooking,
   reviewsFor,
+  unreadCount,
 } from '../../lib/store';
 import DriverActions from './DriverActions';
 import Onboarding from './Onboarding';
@@ -15,6 +16,8 @@ import Stars from '../Stars';
 import TopBar from '../TopBar';
 import BottomNav from '../BottomNav';
 import RatingForm from '../RatingForm';
+import { driverIdFor } from '../../lib/auth';
+import { currentUser } from '../../lib/session';
 
 export default async function DriverHome({
   searchParams,
@@ -22,7 +25,13 @@ export default async function DriverHome({
   searchParams: Promise<{ driver?: string }>;
 }) {
   const sp = await searchParams;
-  const driverId = sp.driver || TEST_DRIVERS[0].id;
+
+  // La sesión manda: si la cuenta conduce, es su perfil de conductor.
+  // El parámetro de la barra de direcciones queda solo como respaldo
+  // para poder recorrer el lado conductor sin sesión en la demo.
+  const user = await currentUser();
+  const sessionDriver = user ? driverIdFor(user) : null;
+  const driverId = sessionDriver || sp.driver || TEST_DRIVERS[0].id;
   const driver = TEST_DRIVERS.find((d) => d.id === driverId) || TEST_DRIVERS[0];
   const full = driverById(driver.id);
 
@@ -136,6 +145,14 @@ export default async function DriverHome({
                     </span>
                   </div>
                 )}
+                {/* Poder preguntarle algo antes de decidir es lo que
+                    convierte una solicitud en una decisión informada. */}
+                <a className="btn btn-ghost btn-sm chat-cta" href={`/chat/${b.id}`}>
+                  Preguntarle algo
+                  {unreadCount(b.id, 'driver') > 0 && (
+                    <span className="cta-badge">{unreadCount(b.id, 'driver')}</span>
+                  )}
+                </a>
                 <DriverActions bookingId={b.id} driverId={driver.id} />
               </div>
             );
