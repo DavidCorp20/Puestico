@@ -11,3 +11,6 @@ npm-debug.log*
 .expo/
 *.tsbuildinfo
 next-env.d.ts
+
+# Base de datos local del piloto
+web/data/

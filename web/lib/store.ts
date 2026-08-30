@@ -1,15 +1,24 @@
 /**
- * Estado compartido del demo, en memoria del servidor.
+ * Capa de datos de Puestico — ahora con persistencia real.
  *
- * Permite que el lado conductor y el lado pasajero se vean entre sí:
- * el pasajero reserva y el conductor ve la solicitud; el conductor
- * acepta y el pasajero ve la confirmación.
+ * Antes esto era un objeto en memoria que se borraba al reiniciar el
+ * servidor. Ahora todo pasa por SQLite (lib/db.ts), así que las
+ * reservas, calificaciones, viajes publicados y verificaciones de
+ * conductor sobreviven reinicios y despliegues.
  *
- * Se reinicia al reiniciar el servidor. Cuando conectemos la base real
- * esto se reemplaza por los repositorios de la API.
+ * Decisión de diseño: los viajes SEMILLA siguen viviendo en código
+ * (lib/data.ts) porque son datos de demostración del corredor. Lo que
+ * se guarda en la base es todo lo que genera el usuario, más un delta
+ * de puestos por viaje semilla para poder reconstruir la
+ * disponibilidad tras un reinicio.
+ *
+ * Las mutaciones son funciones explícitas (confirmBooking, etc.) en vez
+ * de asignaciones sobre objetos: con una base de datos detrás, mutar un
+ * objeto suelto ya no persiste nada.
  */
 
-import { TRIPS, MORE_TRIPS, type Trip } from './data';
+import { TRIPS, MORE_TRIPS, DRIVERS, type Trip } from './data';
+import { db, getMeta, setMeta, IS_BUILD } from './db';
 
 export type BookingStatus =
   | 'pending'
@@ -40,7 +49,6 @@ export interface DemoReview {
   id: string;
   booking_id: string;
   trip_id: string;
-  /** Quién calificó: el pasajero al conductor, o al revés. */
   direction: 'passenger_to_driver' | 'driver_to_passenger';
   author_name: string;
   target_name: string;
@@ -49,7 +57,7 @@ export interface DemoReview {
   created_at: string;
 }
 
-/** Estado del alta de un conductor nuevo (onboarding simulado). */
+/** Estado del alta de un conductor (onboarding). */
 export type DriverKycStatus = 'none' | 'pending' | 'approved' | 'rejected';
 
 export interface DriverKyc {
@@ -60,129 +68,406 @@ export interface DriverKyc {
   reviewed_at?: string;
 }
 
-interface Store {
-  bookings: DemoBooking[];
-  tripStatus: Record<string, TripStatus>;
-  extraTrips: Trip[];
-  reviews: DemoReview[];
-  kyc: Record<string, DriverKyc>;
-  seq: number;
+// ─── Conversión entre filas de SQLite y objetos de la app ──────────
+
+type Row = Record<string, unknown>;
+
+function toBooking(r: Row): DemoBooking {
+  return {
+    id: r.id as string,
+    trip_id: r.trip_id as string,
+    passenger_id: r.passenger_id as string,
+    passenger_name: r.passenger_name as string,
+    passenger_rating: r.passenger_rating as number,
+    seats: r.seats as number,
+    status: r.status as BookingStatus,
+    total_usd: r.total_usd as number,
+    commission_usd: r.commission_usd as number,
+    driver_amount_usd: r.driver_amount_usd as number,
+    paid: Boolean(r.paid),
+    created_at: r.created_at as string,
+  };
+}
+
+function toReview(r: Row): DemoReview {
+  return {
+    id: r.id as string,
+    booking_id: r.booking_id as string,
+    trip_id: r.trip_id as string,
+    direction: r.direction as DemoReview['direction'],
+    author_name: r.author_name as string,
+    target_name: r.target_name as string,
+    stars: r.stars as number,
+    comment: r.comment as string,
+    created_at: r.created_at as string,
+  };
+}
+
+function toTrip(r: Row): Trip {
+  const driver =
+    Object.values(DRIVERS).find((d) => d.id === (r.driver_id as string)) ||
+    DRIVERS.d1;
+  return {
+    id: r.id as string,
+    driver,
+    vehicle: {
+      plate: r.plate as string,
+      model: r.model as string,
+      year: r.year as number,
+      color: r.color as string,
+    },
+    origin: r.origin as string,
+    destination: r.destination as string,
+    departure_date: r.departure_date as string,
+    departure_time: r.departure_time as string,
+    seats_total: r.seats_total as number,
+    seats_available: r.seats_available as number,
+    price_usd: r.price_usd as number,
+  };
+}
+
+// ─── Viajes ────────────────────────────────────────────────────────
+
+/** Viajes publicados por conductores, guardados en la base. */
+function storedTrips(): Trip[] {
+  return (db.prepare('SELECT * FROM trips ORDER BY created_at').all() as Row[]).map(
+    toTrip,
+  );
+}
+
+/** Ajustes de puestos sobre los viajes semilla. */
+function seatAdjustments(): Record<string, number> {
+  const rows = db.prepare('SELECT trip_id, delta FROM seat_adjustments').all() as Row[];
+  const out: Record<string, number> = {};
+  for (const r of rows) out[r.trip_id as string] = r.delta as number;
+  return out;
 }
 
 /**
- * Guardamos el estado en globalThis para que sobreviva al hot-reload
- * de Next en desarrollo y sea el mismo entre rutas.
+ * Todos los viajes: los semilla (con su disponibilidad ajustada) más
+ * los publicados por conductores.
  */
-const g = globalThis as unknown as { __puestico?: Store };
-
-export const store: Store =
-  g.__puestico ||
-  (g.__puestico = {
-    bookings: [],
-    tripStatus: {},
-    extraTrips: [],
-    reviews: [],
-    kyc: {},
-    seq: 1,
-  });
-
-// Migración en caliente: si el estado venía de una versión anterior
-// (hot-reload en desarrollo), completamos los campos nuevos.
-store.reviews ||= [];
-store.kyc ||= {};
-
 export function allTrips(): Trip[] {
-  return [...TRIPS, ...MORE_TRIPS, ...store.extraTrips];
+  const adj = seatAdjustments();
+  const seeds = [...TRIPS, ...MORE_TRIPS].map((t) => {
+    const delta = adj[t.id] || 0;
+    return delta === 0
+      ? t
+      : {
+          ...t,
+          seats_available: Math.max(t.seats_available + delta, 0),
+        };
+  });
+  return [...seeds, ...storedTrips()];
 }
 
 export function findTrip(id: string): Trip | undefined {
   return allTrips().find((t) => t.id === id);
 }
 
+/** Mueve la disponibilidad de un viaje, sea semilla o publicado. */
+function adjustSeats(tripId: string, delta: number) {
+  const stored = db.prepare('SELECT id FROM trips WHERE id = ?').get(tripId);
+  if (stored) {
+    db.prepare(
+      'UPDATE trips SET seats_available = MAX(seats_available + ?, 0) WHERE id = ?',
+    ).run(delta, tripId);
+    return;
+  }
+  db.prepare(
+    `INSERT INTO seat_adjustments (trip_id, delta) VALUES (?, ?)
+     ON CONFLICT(trip_id) DO UPDATE SET delta = delta + excluded.delta`,
+  ).run(tripId, delta);
+}
+
+export function insertTrip(trip: Trip) {
+  db.prepare(
+    `INSERT INTO trips (id, driver_id, plate, model, year, color, origin,
+       destination, departure_date, departure_time, seats_total,
+       seats_available, price_usd, created_at)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+  ).run(
+    trip.id,
+    trip.driver.id,
+    trip.vehicle.plate,
+    trip.vehicle.model,
+    trip.vehicle.year,
+    trip.vehicle.color,
+    trip.origin,
+    trip.destination,
+    trip.departure_date,
+    trip.departure_time,
+    trip.seats_total,
+    trip.seats_available,
+    trip.price_usd,
+    new Date().toISOString(),
+  );
+}
+
+// ─── Estado del viaje ──────────────────────────────────────────────
+
 export function tripStatus(id: string): TripStatus {
-  return store.tripStatus[id] || 'scheduled';
+  const row = db.prepare('SELECT status FROM trip_status WHERE trip_id = ?').get(id) as
+    | { status: string }
+    | undefined;
+  return (row?.status as TripStatus) || 'scheduled';
 }
 
 export function setTripStatus(id: string, status: TripStatus) {
-  store.tripStatus[id] = status;
+  db.prepare(
+    `INSERT INTO trip_status (trip_id, status) VALUES (?, ?)
+     ON CONFLICT(trip_id) DO UPDATE SET status = excluded.status`,
+  ).run(id, status);
 }
 
+// ─── Reservas ──────────────────────────────────────────────────────
+
 export function bookingsForTrip(tripId: string): DemoBooking[] {
-  return store.bookings.filter((b) => b.trip_id === tripId);
+  return (
+    db.prepare('SELECT * FROM bookings WHERE trip_id = ? ORDER BY created_at').all(
+      tripId,
+    ) as Row[]
+  ).map(toBooking);
 }
 
 export function bookingsForDriver(driverId: string): DemoBooking[] {
   const tripIds = allTrips()
     .filter((t) => t.driver.id === driverId)
     .map((t) => t.id);
-  return store.bookings.filter((b) => tripIds.includes(b.trip_id));
+  if (tripIds.length === 0) return [];
+  const marks = tripIds.map(() => '?').join(',');
+  return (
+    db
+      .prepare(
+        `SELECT * FROM bookings WHERE trip_id IN (${marks}) ORDER BY created_at`,
+      )
+      .all(...tripIds) as Row[]
+  ).map(toBooking);
 }
 
 export function bookingsForPassenger(passengerId: string): DemoBooking[] {
-  return store.bookings.filter((b) => b.passenger_id === passengerId);
+  return (
+    db
+      .prepare('SELECT * FROM bookings WHERE passenger_id = ? ORDER BY created_at')
+      .all(passengerId) as Row[]
+  ).map(toBooking);
 }
 
 export function getBooking(id: string): DemoBooking | undefined {
-  return store.bookings.find((b) => b.id === id);
+  const row = db.prepare('SELECT * FROM bookings WHERE id = ?').get(id) as
+    | Row
+    | undefined;
+  return row ? toBooking(row) : undefined;
+}
+
+export function insertBooking(b: DemoBooking) {
+  db.prepare(
+    `INSERT INTO bookings (id, trip_id, passenger_id, passenger_name,
+       passenger_rating, seats, status, total_usd, commission_usd,
+       driver_amount_usd, paid, created_at)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
+  ).run(
+    b.id,
+    b.trip_id,
+    b.passenger_id,
+    b.passenger_name,
+    b.passenger_rating,
+    b.seats,
+    b.status,
+    b.total_usd,
+    b.commission_usd,
+    b.driver_amount_usd,
+    b.paid ? 1 : 0,
+    b.created_at,
+  );
+}
+
+export function allBookings(): DemoBooking[] {
+  return (
+    db.prepare('SELECT * FROM bookings ORDER BY created_at DESC').all() as Row[]
+  ).map(toBooking);
+}
+
+function setBookingStatus(id: string, status: BookingStatus) {
+  db.prepare('UPDATE bookings SET status = ? WHERE id = ?').run(status, id);
+}
+
+/**
+ * El conductor acepta: la reserva pasa a confirmada y el puesto se
+ * descuenta de la disponibilidad. Va en una transacción porque son dos
+ * escrituras que deben pasar juntas o ninguna.
+ */
+export function confirmBooking(booking: DemoBooking) {
+  db.exec('BEGIN');
+  try {
+    setBookingStatus(booking.id, 'confirmed');
+    adjustSeats(booking.trip_id, -booking.seats);
+    db.exec('COMMIT');
+  } catch (e) {
+    db.exec('ROLLBACK');
+    throw e;
+  }
+}
+
+export function rejectBooking(booking: DemoBooking) {
+  setBookingStatus(booking.id, 'rejected');
+}
+
+/**
+ * Cancelación: si estaba confirmada, el puesto vuelve a quedar libre.
+ */
+export function cancelBooking(booking: DemoBooking) {
+  db.exec('BEGIN');
+  try {
+    setBookingStatus(booking.id, 'cancelled');
+    if (booking.status === 'confirmed') {
+      adjustSeats(booking.trip_id, booking.seats);
+    }
+    db.exec('COMMIT');
+  } catch (e) {
+    db.exec('ROLLBACK');
+    throw e;
+  }
+}
+
+/** Al cerrar el viaje, las confirmadas pasan a completadas. */
+export function completeTripBookings(tripId: string): DemoBooking[] {
+  const confirmed = bookingsForTrip(tripId).filter((b) => b.status === 'confirmed');
+  db.exec('BEGIN');
+  try {
+    for (const b of confirmed) setBookingStatus(b.id, 'completed');
+    db.exec('COMMIT');
+  } catch (e) {
+    db.exec('ROLLBACK');
+    throw e;
+  }
+  return confirmed.map((b) => ({ ...b, status: 'completed' as const }));
 }
 
 export function nextId(prefix: string): string {
-  return `${prefix}-${store.seq++}-${Date.now().toString(36)}`;
+  return `${prefix}-${Date.now().toString(36)}-${Math.random()
+    .toString(36)
+    .slice(2, 7)}`;
 }
 
 /** Puestos realmente libres: los del viaje menos los comprometidos. */
 export function freeSeats(tripId: string): number {
   const trip = findTrip(tripId);
   if (!trip) return 0;
-  const taken = bookingsForTrip(tripId)
-    .filter((b) => b.status === 'pending')
-    .reduce((sum, b) => sum + b.seats, 0);
-  return Math.max(trip.seats_available - taken, 0);
+  const row = db
+    .prepare(
+      `SELECT COALESCE(SUM(seats), 0) AS taken FROM bookings
+       WHERE trip_id = ? AND status = 'pending'`,
+    )
+    .get(tripId) as { taken: number };
+  return Math.max(trip.seats_available - row.taken, 0);
 }
 
-// ─── Calificaciones ────────────────────────────────────────
+// ─── Calificaciones ────────────────────────────────────────────────
 
 export function reviewsFor(targetName: string): DemoReview[] {
-  return store.reviews.filter((r) => r.target_name === targetName);
+  return (
+    db
+      .prepare('SELECT * FROM reviews WHERE target_name = ? ORDER BY created_at')
+      .all(targetName) as Row[]
+  ).map(toReview);
 }
 
 export function reviewForBooking(
   bookingId: string,
   direction: DemoReview['direction'],
 ): DemoReview | undefined {
-  return store.reviews.find(
-    (r) => r.booking_id === bookingId && r.direction === direction,
+  const row = db
+    .prepare('SELECT * FROM reviews WHERE booking_id = ? AND direction = ?')
+    .get(bookingId, direction) as Row | undefined;
+  return row ? toReview(row) : undefined;
+}
+
+export function insertReview(r: DemoReview) {
+  db.prepare(
+    `INSERT INTO reviews (id, booking_id, trip_id, direction, author_name,
+       target_name, stars, comment, created_at)
+     VALUES (?,?,?,?,?,?,?,?,?)`,
+  ).run(
+    r.id,
+    r.booking_id,
+    r.trip_id,
+    r.direction,
+    r.author_name,
+    r.target_name,
+    r.stars,
+    r.comment,
+    r.created_at,
   );
 }
 
-/** Promedio de las calificaciones dejadas en el demo sobre una persona. */
-export function ratingFor(targetName: string, fallback: number) {
-  const rs = reviewsFor(targetName);
-  if (rs.length === 0) return { value: fallback, count: 0 };
-  const avg = rs.reduce((s, r) => s + r.stars, 0) / rs.length;
-  return { value: +avg.toFixed(1), count: rs.length };
+export function allReviews(): DemoReview[] {
+  return (
+    db.prepare('SELECT * FROM reviews ORDER BY created_at DESC').all() as Row[]
+  ).map(toReview);
 }
 
-// ─── Alta del conductor (onboarding simulado) ──────────────
+/** Promedio de las calificaciones recibidas por una persona. */
+export function ratingFor(targetName: string, fallback: number) {
+  const row = db
+    .prepare(
+      'SELECT COUNT(*) AS n, AVG(stars) AS avg FROM reviews WHERE target_name = ?',
+    )
+    .get(targetName) as { n: number; avg: number | null };
+  if (!row.n) return { value: fallback, count: 0 };
+  return { value: +(row.avg as number).toFixed(1), count: row.n };
+}
+
+// ─── Alta del conductor ────────────────────────────────────────────
 
 export function kycFor(driverId: string): DriverKyc {
-  return (
-    store.kyc[driverId] || { driver_id: driverId, status: 'none', documents: [] }
-  );
+  const row = db.prepare('SELECT * FROM driver_kyc WHERE driver_id = ?').get(
+    driverId,
+  ) as Row | undefined;
+  if (!row) return { driver_id: driverId, status: 'none', documents: [] };
+  return {
+    driver_id: row.driver_id as string,
+    status: row.status as DriverKycStatus,
+    documents: JSON.parse((row.documents as string) || '[]'),
+    submitted_at: (row.submitted_at as string) || undefined,
+    reviewed_at: (row.reviewed_at as string) || undefined,
+  };
 }
 
 export function setKyc(driverId: string, kyc: DriverKyc) {
-  store.kyc[driverId] = kyc;
+  db.prepare(
+    `INSERT INTO driver_kyc (driver_id, status, documents, submitted_at, reviewed_at)
+     VALUES (?,?,?,?,?)
+     ON CONFLICT(driver_id) DO UPDATE SET
+       status = excluded.status,
+       documents = excluded.documents,
+       submitted_at = excluded.submitted_at,
+       reviewed_at = excluded.reviewed_at`,
+  ).run(
+    driverId,
+    kyc.status,
+    JSON.stringify(kyc.documents),
+    kyc.submitted_at ?? null,
+    kyc.reviewed_at ?? null,
+  );
 }
 
-// ─── Política de cancelación ───────────────────────────────
+export function allKyc(): Record<string, DriverKyc> {
+  const rows = db.prepare('SELECT driver_id FROM driver_kyc').all() as Row[];
+  const out: Record<string, DriverKyc> = {};
+  for (const r of rows) {
+    const id = r.driver_id as string;
+    out[id] = kycFor(id);
+  }
+  return out;
+}
+
+// ─── Política de cancelación ───────────────────────────────────────
 
 /**
  * Reembolso según la política del documento maestro:
  *  - más de 2 horas antes de la salida → devuelve todo
  *  - menos de 2 horas → devuelve la mitad
- *
- * `now` se puede inyectar para poder probar la regla.
  */
 export function refundFor(
   booking: DemoBooking,
@@ -195,24 +480,26 @@ export function refundFor(
   return { refund, full, hoursLeft: +hoursLeft.toFixed(1) };
 }
 
-/** Fecha y hora de salida de un viaje como objeto Date. */
 export function departureDate(tripId: string): Date {
   const trip = findTrip(tripId);
   if (!trip) return new Date();
   return new Date(`${trip.departure_date}T${trip.departure_time}:00`);
 }
 
+// ─── Siembra inicial ───────────────────────────────────────────────
+
 /**
- * Siembra el demo con historia: un viaje ya terminado y calificado,
- * y un conductor verificado.
+ * Siembra el demo con historia la PRIMERA vez que corre.
  *
- * Sin esto, al reiniciar el servidor la app se ve vacía — y una demo
- * vacía no muestra el producto. Corre una sola vez por proceso.
+ * Ahora que hay persistencia, esto tiene que pasar una sola vez en la
+ * vida de la base — si no, cada arranque duplicaría las reseñas. La
+ * marca queda en la tabla `meta`.
  */
 export function seedDemo() {
-  if (store.bookings.length > 0 || store.reviews.length > 0) return;
+  if (IS_BUILD) return;
+  if (getMeta('seeded') === '2') return;
 
-  const past = allTrips().find((t) => t.id === 't-zona-08');
+  const past = [...TRIPS, ...MORE_TRIPS].find((t) => t.id === 't-zona-08');
   if (!past) return;
 
   const booking: DemoBooking = {
@@ -223,63 +510,75 @@ export function seedDemo() {
     passenger_rating: 4.7,
     seats: 1,
     status: 'completed',
-    total_usd: 8,
-    commission_usd: 1.2,
-    driver_amount_usd: 6.8,
+    total_usd: past.price_usd,
+    commission_usd: +(past.price_usd * 0.15).toFixed(2),
+    driver_amount_usd: +(past.price_usd * 0.85).toFixed(2),
     paid: true,
     created_at: new Date(Date.now() - 86_400_000).toISOString(),
   };
-  store.bookings.push(booking);
-  setTripStatus(past.id, 'completed');
 
-  store.reviews.push(
-    {
-      id: 'r-seed-1',
-      booking_id: booking.id,
-      trip_id: past.id,
-      direction: 'driver_to_passenger',
-      author_name: past.driver.name,
-      target_name: booking.passenger_name,
-      stars: 5,
-      comment: 'Puntual y buena conversación.',
-      created_at: new Date(Date.now() - 80_000_000).toISOString(),
-    },
-    {
-      id: 'r-seed-2',
-      booking_id: 'b-seed-hist-1',
-      trip_id: past.id,
-      direction: 'passenger_to_driver',
-      author_name: 'Beatriz Silva',
-      target_name: past.driver.name,
-      stars: 5,
-      comment: 'Manejo tranquilo y salió a la hora exacta.',
-      created_at: new Date(Date.now() - 200_000_000).toISOString(),
-    },
-    {
-      id: 'r-seed-3',
-      booking_id: 'b-seed-hist-2',
-      trip_id: past.id,
-      direction: 'passenger_to_driver',
-      author_name: 'Diego Torres',
-      target_name: past.driver.name,
-      stars: 4,
-      comment: 'Todo bien, el carro cómodo.',
-      created_at: new Date(Date.now() - 400_000_000).toISOString(),
-    },
-  );
+  db.exec('BEGIN');
+  try {
+    if (!getBooking(booking.id)) insertBooking(booking);
+    setTripStatus(past.id, 'completed');
 
-  // El conductor principal ya está verificado
-  setKyc(past.driver.id, {
-    driver_id: past.driver.id,
-    status: 'approved',
-    documents: [
-      'Cédula de identidad',
-      'Licencia de conducir',
-      'Carnet de circulación',
-    ],
-    submitted_at: new Date(Date.now() - 900_000_000).toISOString(),
-    reviewed_at: new Date(Date.now() - 800_000_000).toISOString(),
-  });
+    const seedReviews: DemoReview[] = [
+      {
+        id: 'r-seed-1',
+        booking_id: booking.id,
+        trip_id: past.id,
+        direction: 'driver_to_passenger',
+        author_name: past.driver.name,
+        target_name: booking.passenger_name,
+        stars: 5,
+        comment: 'Puntual y buena conversación.',
+        created_at: new Date(Date.now() - 80_000_000).toISOString(),
+      },
+      {
+        id: 'r-seed-2',
+        booking_id: 'b-seed-hist-1',
+        trip_id: past.id,
+        direction: 'passenger_to_driver',
+        author_name: 'Beatriz Silva',
+        target_name: past.driver.name,
+        stars: 5,
+        comment: 'Manejo tranquilo y salió a la hora exacta.',
+        created_at: new Date(Date.now() - 200_000_000).toISOString(),
+      },
+      {
+        id: 'r-seed-3',
+        booking_id: 'b-seed-hist-2',
+        trip_id: past.id,
+        direction: 'passenger_to_driver',
+        author_name: 'Diego Torres',
+        target_name: past.driver.name,
+        stars: 4,
+        comment: 'Todo bien, el carro cómodo.',
+        created_at: new Date(Date.now() - 400_000_000).toISOString(),
+      },
+    ];
+    for (const r of seedReviews) {
+      if (!reviewForBooking(r.booking_id, r.direction)) insertReview(r);
+    }
+
+    setKyc(past.driver.id, {
+      driver_id: past.driver.id,
+      status: 'approved',
+      documents: [
+        'Cédula de identidad',
+        'Licencia de conducir',
+        'Carnet de circulación',
+      ],
+      submitted_at: new Date(Date.now() - 900_000_000).toISOString(),
+      reviewed_at: new Date(Date.now() - 800_000_000).toISOString(),
+    });
+
+    setMeta('seeded', '2');
+    db.exec('COMMIT');
+  } catch (e) {
+    db.exec('ROLLBACK');
+    throw e;
+  }
 }
 
 seedDemo();

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { store, kycFor, setKyc } from '../../../lib/store';
+import { kycFor, setKyc, allKyc } from '../../../lib/store';
 
 /**
  * Alta del conductor (simulada).
@@ -63,5 +63,5 @@ export async function POST(request: Request) {
 }
 
 export async function GET() {
-  return NextResponse.json(store.kyc);
+  return NextResponse.json(allKyc());
 }

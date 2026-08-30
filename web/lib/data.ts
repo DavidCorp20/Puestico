@@ -214,28 +214,6 @@ export function getTrip(id: string): Trip | undefined {
   return TRIPS.find((t) => t.id === id);
 }
 
-/** Desglose de comisión — misma regla que payments.service.ts (15%). */
-export function priceBreakdown(pricePerSeat: number, seats: number) {
-  const total = +(pricePerSeat * seats).toFixed(2);
-  const commission = +(total * COMMISSION_RATE).toFixed(2);
-  const driverAmount = +(total - commission).toFixed(2);
-  return { total, commission, driverAmount };
-}
-
-/** Reservas en memoria — se reinician al reiniciar el servidor. */
-export interface Booking {
-  id: string;
-  trip_id: string;
-  passenger_id: string;
-  passenger_name: string;
-  seats: number;
-  status: 'pending' | 'confirmed';
-  total_usd: number;
-  created_at: string;
-}
-
-export const BOOKINGS: Booking[] = [];
-
 /** Conductores de prueba para el modo conductor. */
 export const TEST_DRIVERS = [
   { id: DRIVERS.d1.id, name: DRIVERS.d1.name, photo: DRIVERS.d1.photo },

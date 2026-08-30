@@ -1,6 +1,16 @@
 import { NextResponse } from 'next/server';
-import { getBooking, findTrip, setTripStatus, bookingsForTrip, store, nextId } from '../../../lib/store';
-import { driverById, priceBreakdown } from '../../../lib/data';
+import {
+  getBooking,
+  findTrip,
+  setTripStatus,
+  nextId,
+  insertTrip,
+  confirmBooking,
+  rejectBooking,
+  completeTripBookings,
+  freeSeats,
+} from '../../../lib/store';
+import { driverById } from '../../../lib/data';
 import { computeFare, validatePrice } from '../../../lib/fare';
 
 /**
@@ -76,7 +86,7 @@ export async function POST(request: Request) {
       price_usd: priceNum,
     };
 
-    store.extraTrips.push(trip);
+    insertTrip(trip);
     return NextResponse.json(trip, { status: 201 });
   }
 
@@ -98,12 +108,12 @@ export async function POST(request: Request) {
       if (trip && booking.seats > trip.seats_available) {
         return NextResponse.json({ error: 'Ya no hay puestos' }, { status: 409 });
       }
-      booking.status = 'confirmed';
-      if (trip) trip.seats_available -= booking.seats;
-    } else {
-      booking.status = 'rejected';
+      confirmBooking(booking);
+      return NextResponse.json({ ...booking, status: 'confirmed' });
     }
-    return NextResponse.json(booking);
+
+    rejectBooking(booking);
+    return NextResponse.json({ ...booking, status: 'rejected' });
   }
 
   // ─── Acciones sobre el viaje ──────────────────────────────
@@ -120,8 +130,7 @@ export async function POST(request: Request) {
 
     setTripStatus(trip.id, 'completed');
     // Al cerrar el viaje, las reservas confirmadas pasan a completadas
-    const confirmed = bookingsForTrip(trip.id).filter((b) => b.status === 'confirmed');
-    confirmed.forEach((b) => (b.status = 'completed'));
+    const confirmed = completeTripBookings(trip.id);
 
     const earnings = confirmed.reduce((s, b) => s + b.driver_amount_usd, 0);
     const commission = confirmed.reduce((s, b) => s + b.commission_usd, 0);

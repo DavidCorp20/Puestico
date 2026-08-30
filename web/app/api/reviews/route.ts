@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
 import {
-  store,
   getBooking,
   findTrip,
   nextId,
   reviewForBooking,
+  insertReview,
+  allReviews,
 } from '../../../lib/store';
 
 /**
@@ -65,10 +66,10 @@ export async function POST(request: Request) {
     created_at: new Date().toISOString(),
   };
 
-  store.reviews.push(review);
+  insertReview(review);
   return NextResponse.json(review, { status: 201 });
 }
 
 export async function GET() {
-  return NextResponse.json(store.reviews);
+  return NextResponse.json(allReviews());
 }

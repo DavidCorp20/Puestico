@@ -2,13 +2,15 @@ import { NextResponse } from 'next/server';
 import { passengerById, TEST_USERS } from '../../../lib/data';
 import { quote } from '../../../lib/fare';
 import {
-  store,
   findTrip,
   nextId,
   bookingsForTrip,
   getBooking,
   refundFor,
   departureDate,
+  insertBooking,
+  cancelBooking,
+  allBookings,
 } from '../../../lib/store';
 
 /**
@@ -83,7 +85,7 @@ export async function POST(request: Request) {
     created_at: new Date().toISOString(),
   };
 
-  store.bookings.push(booking);
+  insertBooking(booking);
   return NextResponse.json(booking, { status: 201 });
 }
 
@@ -110,13 +112,8 @@ export async function DELETE(request: Request) {
 
   const { refund, full } = refundFor(booking, departureDate(booking.trip_id));
 
-  // Si estaba confirmada, el puesto vuelve a estar disponible
-  if (booking.status === 'confirmed') {
-    const trip = findTrip(booking.trip_id);
-    if (trip) trip.seats_available += booking.seats;
-  }
-
-  booking.status = 'cancelled';
+  // cancelBooking devuelve el puesto a la disponibilidad si hacía falta
+  cancelBooking(booking);
 
   return NextResponse.json({
     ok: true,
@@ -126,5 +123,5 @@ export async function DELETE(request: Request) {
 }
 
 export async function GET() {
-  return NextResponse.json(store.bookings);
+  return NextResponse.json(allBookings());
 }
