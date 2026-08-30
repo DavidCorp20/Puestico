@@ -255,10 +255,25 @@ export class TripsService {
     speed?: number,
   ): Promise<void> {
     this.assertDb();
+    // La tabla guarda lat/lng como números, NO una columna geográfica
+    // (así está en el esquema). Escribirlo como geografía daba error 500.
     await this.db.query(
-      `INSERT INTO trip_locations (trip_id, coords, speed_kmh)
-       VALUES ($1, ST_SetSRID(ST_MakePoint($2, $3), 4326)::geography, $4)`,
-      [id, lng, lat, speed ?? null],
+      `INSERT INTO trip_locations (trip_id, lat, lng, speed)
+       VALUES ($1, $2, $3, $4)`,
+      [id, lat, lng, speed ?? null],
+    );
+  }
+
+  /** El recorrido en vivo que ve el pasajero. */
+  async locations(id: string, limit = 200): Promise<any[]> {
+    this.assertDb();
+    return this.db.query(
+      `SELECT lat, lng, speed, created_at
+         FROM trip_locations
+        WHERE trip_id = $1
+        ORDER BY created_at DESC
+        LIMIT $2`,
+      [id, limit],
     );
   }
 

@@ -2,6 +2,9 @@
 
 Última actualización: 2026-08-30. Escrito por Engineer.
 
+> El detalle completo de funciones y estructura está en el README principal
+> del repositorio. Acá queda solo lo específico del backend.
+
 ## Qué hace hoy, de verdad
 
 El backend dejó de ser un esqueleto con TODOs y habla con PostgreSQL.

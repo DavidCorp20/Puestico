@@ -133,4 +133,13 @@ export class TripsController {
     }
     return this.tripsService.updateLocation(id, dto.lat, dto.lng, dto.speed);
   }
+
+  /**
+   * El recorrido en vivo. Lo ve cualquiera con el enlace del viaje a
+   * propósito: es la función de "comparte tu viaje con tu familia".
+   */
+  @Get(':id/locations')
+  locations(@Param('id') id: string) {
+    return this.tripsService.locations(id);
+  }
 }
