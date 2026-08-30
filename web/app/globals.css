@@ -1,3 +1,5 @@
+@import './fonts.css';
+
 :root {
   /* ─── Tokens de marca (Designer) ─────────────────────
      Un solo acento verde. El verde se parte en DOS USOS del
@@ -28,6 +30,11 @@
   --danger:        #F26D6D;
   --danger-soft:   rgba(242, 109, 109, 0.12);
   --info:          #6BA8F5;
+
+  /* Tipografia: una familia de caracter para titulos y otra para leer.
+     Ver app/fonts.css. */
+  --font-display: 'Bricolage', 'Jakarta', ui-sans-serif, system-ui, sans-serif;
+  --font-body:    'Jakarta', ui-sans-serif, system-ui, -apple-system, sans-serif;
 
   --radius:        16px;
   --radius-sm:     12px;
@@ -61,8 +68,7 @@ body {
     radial-gradient(900px 500px at 50% -8%, var(--bg-glow), transparent 70%),
     var(--bg);
   color: var(--text);
-  font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
-    'Helvetica Neue', sans-serif;
+  font-family: var(--font-body);
   line-height: 1.55;
   min-height: 100vh;
   display: flex;
@@ -159,19 +165,31 @@ body {
 }
 
 /* ─── Tipografía ───────────────────────────────────── */
+/* Los titulos van con la familia de caracter; el texto corrido no.
+   Mezclar las dos es lo que da la sensacion de producto: si todo va
+   con la misma letra, no hay jerarquia que se SIENTA. */
+h1, h2, h3 {
+  font-family: var(--font-display);
+  font-weight: 700;
+}
+
 h1 {
   font-size: 1.75rem;
   margin-bottom: 6px;
-  letter-spacing: -0.03em;
-  font-weight: 700;
-  line-height: 1.2;
+  letter-spacing: -0.035em;
+  line-height: 1.14;
 }
 
 h2 {
-  font-size: 1.08rem;
+  font-size: 1.12rem;
   margin-bottom: 13px;
-  letter-spacing: -0.015em;
-  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+/* Los numeros tabulares evitan que los precios y los contadores
+   bailen al cambiar de digito. */
+.ap-now, .price, .fare-amount, .stat-num, .otp-box {
+  font-variant-numeric: tabular-nums;
 }
 
 .subtitle {
@@ -5094,4 +5112,449 @@ input::placeholder, textarea::placeholder {
 .quick-access .btn-ghost:hover {
   background: rgba(34, 197, 94, 0.18);
   border-color: var(--accent-text);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   INGRESO — SEGUNDA VERSIÓN, REHECHA
+   ───────────────────────────────────────────────────────────────────
+   David: "me siguen entregando lo mismo, que no sea lo mismo".
+   La versión anterior era la misma pantalla con más adornos. Esta
+   cambia las tres cosas que de verdad hacen que se sienta distinto:
+   la LETRA (familia propia, ver fonts.css), la ESCALA (el precio y la
+   marca mandan) y el MOVIMIENTO (el fondo está vivo, no decorado).
+   Todo lo de esta sección va después, así que pisa a la anterior a
+   propósito — es la versión que manda.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ─── Telón ───────────────────────────────────────────────────────── */
+
+.auth-sky {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 70% at 50% 0%, #123024 0%, #0D1218 55%, #0A0E13 100%);
+}
+
+.sky-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Los halos: el color del ambiente. Respiran desfasados para que la
+   luz nunca se repita igual. */
+.sky-glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(58px);
+}
+
+.sky-glow-a {
+  width: 78%;
+  aspect-ratio: 1;
+  top: -22%;
+  left: -18%;
+  background: radial-gradient(circle, rgba(34, 197, 94, 0.30), transparent 68%);
+  animation: sky-breathe 11s ease-in-out infinite;
+}
+
+.sky-glow-b {
+  width: 66%;
+  aspect-ratio: 1;
+  top: 6%;
+  right: -22%;
+  background: radial-gradient(circle, rgba(96, 148, 245, 0.22), transparent 68%);
+  animation: sky-breathe 14s ease-in-out infinite reverse;
+}
+
+@keyframes sky-breathe {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.85; }
+  50%      { transform: translate3d(4%, 3%, 0) scale(1.12); opacity: 1; }
+}
+
+/* La vía punteada avanza: la carretera "corre". */
+.sky-dash { animation: sky-flow 2.4s linear infinite; }
+
+@keyframes sky-flow {
+  to { stroke-dashoffset: -24; }
+}
+
+.sky-car { filter: drop-shadow(0 0 10px rgba(34, 197, 94, 0.85)); }
+
+.sky-stop { animation: sky-ping 3.4s ease-in-out infinite; }
+
+@keyframes sky-ping {
+  0%, 100% { r: 4.5; fill-opacity: 0.5; }
+  50%      { r: 6.4; fill-opacity: 0.9; }
+}
+
+.sky-win { animation: sky-blink 6s steps(1, end) infinite; }
+
+@keyframes sky-blink {
+  0%, 44%  { opacity: 0.85; }
+  45%, 70% { opacity: 0.1; }
+  71%, 100%{ opacity: 0.7; }
+}
+
+/* El velo garantiza contraste del texto pase lo que pase detrás. */
+.sky-veil {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(10, 14, 19, 0.30) 0%,
+    rgba(10, 14, 19, 0.62) 42%,
+    rgba(10, 14, 19, 0.86) 78%,
+    rgba(10, 14, 19, 0.94) 100%
+  );
+}
+
+/* ─── La palabra Puestico ─────────────────────────────────────────── */
+
+.auth-brand { padding: 6px 0 22px; }
+
+.auth-wordmark {
+  font-family: var(--font-display);
+  font-size: clamp(2.6rem, 13vw, 3.5rem);
+  font-weight: 700;
+  letter-spacing: -0.045em;
+  line-height: 1;
+  margin: 16px 0 10px;
+  /* El degradado se pone en cada letra, no en el h1: si va en el
+     bloque, el recorte del texto se rompe al animar las letras. */
+  background: none;
+  -webkit-text-fill-color: currentColor;
+  display: flex;
+  justify-content: center;
+}
+
+/* Cada letra entra desde abajo, una detrás de otra. */
+.wm-l {
+  display: inline-block;
+  background: linear-gradient(170deg, #FFFFFF 12%, #B9F2CE 62%, #6FE3A0 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: wm-in 0.62s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--i) * 55ms);
+}
+
+/* La última letra en verde pleno: ancla la marca y hace juego con el
+   puesto libre del logo, que es lo único que se mueve ahí. */
+.wm-accent {
+  background: linear-gradient(170deg, #4ADE80, #16A34A);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+@keyframes wm-in {
+  from { opacity: 0; transform: translateY(26px) rotate(-5deg); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ─── El lema que rota ────────────────────────────────────────────── */
+
+.auth-claim {
+  font-size: 1.02rem;
+  color: #C9D3DE;
+  text-align: center;
+  margin: 0;
+  animation: step-in 0.5s ease both;
+  animation-delay: 520ms;
+}
+
+.auth-claim strong {
+  color: var(--text);
+  font-weight: 700;
+}
+
+/* Ventana de altura fija y las palabras subiendo por dentro: el
+   destino cambia sin mover ni un pixel de lo que hay alrededor. */
+.claim-rot {
+  display: inline-grid;
+  vertical-align: bottom;
+  overflow: hidden;
+  height: 1.5em;
+  text-align: left;
+}
+
+.claim-rot em {
+  grid-area: 1 / 1;
+  font-style: normal;
+  font-weight: 700;
+  color: var(--accent-text);
+  white-space: nowrap;
+  animation: claim-cycle 11.2s cubic-bezier(0.6, 0, 0.2, 1) infinite;
+  opacity: 0;
+}
+
+.claim-rot em:nth-child(1) { animation-delay: 0s; }
+.claim-rot em:nth-child(2) { animation-delay: 2.8s; }
+.claim-rot em:nth-child(3) { animation-delay: 5.6s; }
+.claim-rot em:nth-child(4) { animation-delay: 8.4s; }
+
+@keyframes claim-cycle {
+  0%            { opacity: 0; transform: translateY(105%); }
+  3%, 22%       { opacity: 1; transform: translateY(0); }
+  25%, 100%     { opacity: 0; transform: translateY(-105%); }
+}
+
+/* ─── El precio, en grande ────────────────────────────────────────── */
+
+.auth-deal {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+  padding: 18px 18px 20px;
+  margin-bottom: 24px;
+  border-radius: 22px;
+  background:
+    linear-gradient(180deg, rgba(34, 197, 94, 0.12), rgba(20, 26, 33, 0.55));
+  border: 1px solid rgba(34, 197, 94, 0.30);
+  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(10px);
+}
+
+.ad-route {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #A7B3BF;
+}
+
+.ad-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent-text);
+  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.16);
+}
+
+.ad-sep { color: var(--accent-text); }
+
+.ad-nums {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.ad-was {
+  font-family: var(--font-display);
+  font-size: 1.28rem;
+  font-style: normal;
+  color: #8A97A4;
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+  text-decoration-color: rgba(242, 109, 109, 0.85);
+}
+
+/* Este número es el argumento de la app: va con la letra de títulos y
+   al tamaño que le corresponde. Antes era más chico que el titular. */
+.ad-now {
+  font-family: var(--font-display);
+  font-size: clamp(2.7rem, 14vw, 3.4rem);
+  font-weight: 700;
+  line-height: 0.95;
+  letter-spacing: -0.05em;
+  color: #FFFFFF;
+  text-shadow: 0 0 26px rgba(34, 197, 94, 0.5);
+}
+
+.ad-cents {
+  font-size: 0.48em;
+  letter-spacing: -0.02em;
+  color: var(--accent-text);
+}
+
+.ad-tag {
+  font-size: 0.87rem;
+  color: #C3CDD8;
+  line-height: 1.45;
+}
+
+.ad-tag em {
+  font-style: normal;
+  color: var(--accent-text);
+  font-weight: 700;
+}
+
+/* ─── La pregunta del rol ─────────────────────────────────────────── */
+
+.role-ask {
+  font-family: var(--font-display);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 1.32rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  margin: 0 0 13px;
+  text-align: center;
+}
+
+.ra-kicker {
+  font-family: var(--font-body);
+  font-size: 0.71rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent-text);
+}
+
+/* ─── Tarjetas de rol ─────────────────────────────────────────────── */
+
+.role-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  margin-bottom: 8px;
+}
+
+.role-card {
+  position: relative;
+  overflow: hidden;
+  gap: 14px;
+  padding: 17px 17px;
+  border-radius: 20px;
+  background: linear-gradient(150deg, rgba(28, 36, 46, 0.95), rgba(18, 23, 30, 0.95));
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.30);
+  transition: border-color 0.18s, transform 0.14s, box-shadow 0.18s;
+}
+
+/* Un brillo cruza la tarjeta al pasar por encima: da la sensación de
+   material, no de rectángulo. */
+.role-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.10) 48%,
+    transparent 66%
+  );
+  transform: translateX(-120%);
+  transition: transform 0.55s ease;
+}
+
+.role-card:hover::after,
+.role-card:focus-visible::after { transform: translateX(120%); }
+
+.role-card:hover,
+.role-card:focus-visible {
+  border-color: rgba(34, 197, 94, 0.6);
+  transform: translateY(-2px);
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.38), 0 0 0 1px rgba(34, 197, 94, 0.25);
+}
+
+.rc-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 15px;
+}
+
+.rc-icon-pass {
+  color: #6FE3A0;
+  background: linear-gradient(150deg, rgba(34, 197, 94, 0.22), rgba(34, 197, 94, 0.06));
+  border: 1px solid rgba(34, 197, 94, 0.34);
+}
+
+.rc-icon-drive {
+  color: #8FBEFF;
+  background: linear-gradient(150deg, rgba(96, 165, 250, 0.22), rgba(96, 165, 250, 0.06));
+  border: 1px solid rgba(96, 165, 250, 0.34);
+}
+
+.rc-main strong {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  letter-spacing: -0.02em;
+}
+
+.rc-main small { color: #B7C2CE; }
+
+.rc-chevron { font-size: 1.2rem; }
+
+/* ─── Cabeceras de los pasos ──────────────────────────────────────── */
+
+.auth-head .auth-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 7.4vw, 1.95rem);
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+}
+
+.auth-head .auth-sub { color: #C3CDD8; }
+
+/* ─── Casillas del código ─────────────────────────────────────────── */
+
+.otp-box {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  border-radius: 14px;
+  background: rgba(28, 35, 44, 0.96);
+  border: 2px solid var(--border-strong);
+}
+
+.otp-box.filled {
+  border-color: var(--accent-text);
+  background: rgba(34, 197, 94, 0.12);
+  box-shadow: 0 0 18px rgba(34, 197, 94, 0.22);
+}
+
+/* ─── Botón principal ─────────────────────────────────────────────── */
+
+.auth-card .btn,
+.auth-card .btn-lg {
+  font-family: var(--font-display);
+  font-size: 1.04rem;
+  letter-spacing: -0.01em;
+  border-radius: 15px;
+  padding: 15px 18px;
+  box-shadow: 0 10px 26px rgba(22, 163, 74, 0.34);
+}
+
+/* ─── Respeto por quien pide menos movimiento ─────────────────────── */
+
+/* Con el ajuste del sistema activado se apaga TODO lo que se mueve
+   acá — incluida la marca y el lema, que si no aparecerían vacíos. */
+@media (prefers-reduced-motion: reduce) {
+  .sky-glow,
+  .sky-dash,
+  .sky-stop,
+  .sky-win,
+  .sky-car,
+  .wm-l,
+  .claim-rot em,
+  .step-in,
+  .rise,
+  .logomark.is-animated .lm-free,
+  .logomark.is-animated .lm-spark {
+    animation: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+  }
+
+  /* Sin animación, las cuatro palabras del lema se apilarían: se deja
+     la primera. */
+  .claim-rot em:not(:first-child) { display: none; }
+  .role-card::after { display: none; }
+}
+
+@media (max-width: 560px) {
+  .auth-deal { padding: 16px 14px 18px; }
+  .role-card { padding: 15px 14px; }
 }

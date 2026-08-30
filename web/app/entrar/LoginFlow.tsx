@@ -28,6 +28,45 @@ import LogoMark from '../LogoMark';
  * El acceso rápido (entrar sin código) es TEMPORAL y vive detrás de
  * `PUESTICO_QUICK_ACCESS`; ver lib/auth.ts.
  */
+/* Iconos dibujados, no emoji. Un emoji lo dibuja el sistema operativo:
+   se ve distinto en cada telefono y siempre parece provisional. Estos
+   son SVG propios y heredan el color del contenedor. */
+
+function SeatGlyph() {
+  return (
+    <svg viewBox="0 0 24 24" width="24" height="24" fill="none">
+      <path
+        d="M7 4h7a3 3 0 0 1 3 3v6H8a1 1 0 0 1-1-1V4Z"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M5 13h13a2 2 0 0 1 2 2v1a2 2 0 0 1-2 2H8l-3-5Z"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinejoin="round"
+      />
+      <path d="M8 18v2.5M17 18v2.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function WheelGlyph() {
+  return (
+    <svg viewBox="0 0 24 24" width="24" height="24" fill="none">
+      <circle cx="12" cy="12" r="8.6" stroke="currentColor" strokeWidth="1.7" />
+      <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.7" />
+      <path
+        d="M12 3.4V9M4.2 16.5 9.4 13.6M19.8 16.5 14.6 13.6"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 type Step = 'role' | 'phone' | 'code' | 'name';
 
 const STEP_INDEX: Record<Step, number> = { role: 0, phone: 1, code: 2, name: 2 };
@@ -204,26 +243,61 @@ export default function LoginFlow({
     return (
       <div className="auth-wrap step-in">
         <div className="auth-brand">
-          <LogoMark size={78} animate />
-          <h1 className="auth-wordmark">Puestico</h1>
-          <p className="auth-claim">Alguien ya va para allá. Móntate.</p>
+          <LogoMark size={84} animate />
+
+          {/* La palabra letra por letra: entran una detrás de otra, con
+              la 'o' final marcada en verde. Un logotipo que se ESCRIBE
+              se recuerda; uno que aparece, no. Va en <h1> completo para
+              el lector de pantalla y las letras son decorativas. */}
+          <h1 className="auth-wordmark" aria-label="Puestico">
+            {'Puestico'.split('').map((c, i) => (
+              <span
+                key={i}
+                className={`wm-l${i === 7 ? ' wm-accent' : ''}`}
+                style={{ '--i': i } as React.CSSProperties}
+                aria-hidden="true"
+              >
+                {c}
+              </span>
+            ))}
+          </h1>
+
+          {/* El lema ya no es una frase suelta: la parte que cambia rota
+              sola, y así la primera pantalla dice TRES cosas en el
+              tiempo que la persona tarda en decidir. */}
+          <p className="auth-claim">
+            Alguien ya va para{' '}
+            <span className="claim-rot">
+              <em>Caracas</em>
+              <em>Guatire</em>
+              <em>Los Teques</em>
+              <em>el litoral</em>
+            </span>
+            . <strong>Móntate.</strong>
+          </p>
         </div>
 
-        {/* Un número real convence más que un adjetivo. */}
-        <div className="auth-proof rise" style={{ '--d': '80ms' } as React.CSSProperties}>
-          <span className="ap-line">
-            <strong>Guatire → Chacaíto</strong>
+        {/* El precio, en grande y con la letra de titulos: es el
+            argumento entero de la app y estaba escondido en un
+            recuadrito. Un número real convence más que un adjetivo. */}
+        <div className="auth-deal rise" style={{ '--d': '90ms' } as React.CSSProperties}>
+          <span className="ad-route">
+            <span className="ad-dot" /> Guatire <span className="ad-sep">→</span> Chacaíto
           </span>
-          <span className="ap-nums">
-            <em className="ap-was">$14,50 en taxi</em>
-            <span className="ap-arrow">→</span>
-            <strong className="ap-now">$7,25</strong>
+          <span className="ad-nums">
+            <em className="ad-was">$14,50</em>
+            <strong className="ad-now">
+              $7<span className="ad-cents">,25</span>
+            </strong>
           </span>
-          <span className="ap-tag">50% menos, en el mismo carro que ya iba</span>
+          <span className="ad-tag">
+            La mitad de un taxi, en el carro que <em>ya</em> iba para allá
+          </span>
         </div>
 
-        <p className="role-ask rise" style={{ '--d': '160ms' } as React.CSSProperties}>
-          ¿Cómo vas a usar Puestico?
+        <p className="role-ask rise" style={{ '--d': '170ms' } as React.CSSProperties}>
+          <span className="ra-kicker">Para empezar</span>
+          ¿Viajas o llevas gente?
         </p>
 
         <div className="role-cards">
@@ -236,7 +310,9 @@ export default function LoginFlow({
               setStep('phone');
             }}
           >
-            <span className="rc-icon rc-icon-pass">🎫</span>
+            <span className="rc-icon rc-icon-pass" aria-hidden="true">
+              <SeatGlyph />
+            </span>
             <span className="rc-main">
               <strong>Busco puesto</strong>
               <small>Necesito llegar y quiero pagar menos que un taxi.</small>
@@ -253,7 +329,9 @@ export default function LoginFlow({
               setStep('phone');
             }}
           >
-            <span className="rc-icon rc-icon-drive">🚗</span>
+            <span className="rc-icon rc-icon-drive" aria-hidden="true">
+              <WheelGlyph />
+            </span>
             <span className="rc-main">
               <strong>Tengo carro</strong>
               <small>Ya hago el viaje y quiero recuperar la gasolina.</small>
