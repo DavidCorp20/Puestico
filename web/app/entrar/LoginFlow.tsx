@@ -143,7 +143,14 @@ export default function LoginFlow({
     const { ok, data } = await post({ action: 'profile', name, role });
     setLoading(false);
     if (!ok) {
-      setError(data.error || 'No se pudo guardar tu nombre.');
+      // 401 aca significa que la sesion no llego (cookie bloqueada), no
+      // que el nombre este mal: decirlo distinto evita que la persona
+      // reescriba su nombre diez veces sin que cambie nada.
+      setError(
+        data.error === 'No hay sesión'
+          ? 'Se perdio la sesion. Toca "Entrar sin codigo" otra vez y no cierres la pestania.'
+          : data.error || 'No se pudo guardar tu nombre.',
+      );
       return;
     }
     window.location.href = data.home || (role === 'driver' ? '/conductor' : '/buscar');

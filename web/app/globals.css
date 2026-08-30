@@ -36,13 +36,25 @@
   --shadow-float:  0 12px 32px rgba(0,0,0,.38);
   --ring:          0 0 0 3px rgba(34, 197, 94, 0.35);
 
+  /* --line se usaba en 25 sitios y NUNCA estuvo definido: los bordes se
+     dibujaban en negro/transparente. De ahi que el ingreso se viera
+     "plano" y los casilleros del codigo no se distinguieran. */
+  --line:          #3B4854;
+
   --star: #F5B841;
   --star-off: rgba(124, 138, 151, 0.3);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
-html { -webkit-text-size-adjust: 100%; }
+html {
+  -webkit-text-size-adjust: 100%;
+  /* CLAVE del texto negro: sin esto el navegador asume tema claro y
+     pinta los controles nativos (campos, selects, cursor, texto de
+     autocompletado) en negro sobre nuestro fondo oscuro. */
+  color-scheme: dark;
+  background: var(--bg);
+}
 
 body {
   background:
@@ -4967,4 +4979,119 @@ a.ride-card:hover { border-color: var(--border-strong); }
   font-size: 0.95rem;
   flex-shrink: 0;
   margin-top: 1px;
+}
+
+
+/* ─── Texto legible en TODO campo (arreglo de contraste) ───────────── */
+
+/* Chrome/Safari pintan el autocompletado con FONDO CLARO Y TEXTO NEGRO
+   ignorando `color`. El unico camino es la sombra interna del tamanio
+   del campo + -webkit-text-fill-color. Sin esto, quien deja que el
+   navegador rellene su telefono ve letras negras ilegibles. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+select:-webkit-autofill,
+textarea:-webkit-autofill {
+  -webkit-text-fill-color: var(--text) !important;
+  -webkit-box-shadow: 0 0 0 1000px var(--surface-2) inset !important;
+  box-shadow: 0 0 0 1000px var(--surface-2) inset !important;
+  caret-color: var(--text);
+  transition: background-color 9999s ease-out 0s;
+}
+
+/* Los campos con fondo transparente (telefono, casillas del codigo)
+   heredarian el relleno de arriba en gris: van con el suyo. */
+.phone-input input:-webkit-autofill,
+.otp-box:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 1000px rgba(22, 28, 36, 0.96) inset !important;
+  box-shadow: 0 0 0 1000px rgba(22, 28, 36, 0.96) inset !important;
+}
+
+/* Ningun campo hereda color del navegador: se declara explicito. */
+input, select, textarea, button {
+  color: var(--text);
+  -webkit-text-fill-color: var(--text);
+}
+
+input::placeholder, textarea::placeholder {
+  color: var(--muted-2);
+  -webkit-text-fill-color: var(--muted-2);
+  opacity: 1;
+}
+
+/* El boton verde lleva texto OSCURO a proposito (contraste 5,6:1): la
+   regla de arriba no debe pisarlo. */
+.btn,
+.btn:hover {
+  color: var(--on-accent);
+  -webkit-text-fill-color: var(--on-accent);
+}
+
+.btn-ghost,
+.btn-mini {
+  color: var(--text);
+  -webkit-text-fill-color: var(--text);
+}
+
+/* Si el sistema pide tema claro, NO cambiamos a claro a medias: la app
+   es oscura y se declara asi. Un tema claro a medias es justo lo que
+   produce texto negro sobre fondo oscuro. */
+@media (prefers-color-scheme: light) {
+  html, body { background: var(--bg); color: var(--text); }
+}
+
+/* ─── Ingreso: mas presencia y mas contraste ──────────────────────── */
+
+.auth-card {
+  /* Mas opaco: el vidrio dejaba pasar el telon y bajaba el contraste
+     del texto justo en la pantalla que hay que leer primero. */
+  background: rgba(20, 26, 33, 0.93);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.role-card {
+  background: rgba(20, 26, 33, 0.93);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.auth-head .auth-sub,
+.auth-claim,
+.field-hint,
+.rc-main small {
+  color: #C3CDD8;            /* 11,4:1 — antes --muted sobre vidrio */
+}
+
+.auth-legal,
+.qa-note,
+.ap-tag {
+  color: #A7B3BF;            /* legal y notas: legibles, no grises */
+}
+
+.otp-box {
+  background: rgba(28, 35, 44, 0.96);
+  border-color: var(--border-strong);
+  border-width: 2px;
+}
+
+.phone-input {
+  background: rgba(28, 35, 44, 0.96);
+  border-color: var(--border-strong);
+}
+
+.phone-cc { color: var(--text); }
+
+/* El atajo temporal tiene que VERSE cuando es la unica via de entrada:
+   dejaba de leerse como boton. */
+.quick-access .btn-ghost {
+  background: rgba(34, 197, 94, 0.10);
+  border: 1.5px dashed rgba(34, 197, 94, 0.55);
+  color: var(--accent-text);
+  -webkit-text-fill-color: var(--accent-text);
+  font-weight: 650;
+}
+
+.quick-access .btn-ghost:hover {
+  background: rgba(34, 197, 94, 0.18);
+  border-color: var(--accent-text);
 }

@@ -387,10 +387,16 @@ export function revokeSession(token: string) {
 
 /** Opciones de cookie compartidas para no divergir entre login y logout. */
 export function cookieOptions() {
+  // La app se prueba DENTRO de un iframe (la vista previa del chat), que
+  // es otro sitio. Con SameSite=Lax el navegador NO manda la cookie en
+  // las peticiones de ese iframe: la sesion se creaba bien y la
+  // siguiente llamada llegaba sin cookie -> "No hay sesion". Con
+  // SameSite=None si viaja, y None EXIGE Secure (por eso van juntos).
+  const crossSite = process.env.NODE_ENV === 'production';
   return {
     httpOnly: true,
-    sameSite: 'lax' as const,
-    secure: process.env.NODE_ENV === 'production',
+    sameSite: (crossSite ? 'none' : 'lax') as 'none' | 'lax',
+    secure: crossSite,
     path: '/',
     maxAge: SESSION_TTL_DAYS * 86_400,
   };
